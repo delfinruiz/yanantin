@@ -1,7 +1,7 @@
 --- 
 deployment:
   tasks:
-    - /usr/local/bin/php /usr/local/bin/composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
+    - /usr/local/bin/php /usr/local/bin/composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist || true
     - /usr/local/bin/php artisan optimize:clear || true
     - /usr/local/bin/php artisan storage:link || true
 
