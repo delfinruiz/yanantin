@@ -1,59 +1,187 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Finanzas Personales
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+Plataforma web para gestionar finanzas personales y procesos internos de personas (RRHH), construida sobre Laravel 12 y Filament 4.  
+Permite registrar ingresos y gastos, visualizar dashboards financieros, gestionar tareas, encuestas, evaluaciones de desempeño, reuniones, archivos y mucho más, todo desde un único panel administrativo.
+
+<p align="left">
+  <img src="https://img.shields.io/badge/PHP-%5E8.2-777BB4?logo=php" alt="PHP 8.2">
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?logo=laravel" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/Filament-4.x-F472B6" alt="Filament 4">
+  <img src="https://img.shields.io/badge/License-MIT-10B981" alt="MIT License">
 </p>
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Características principales
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Finanzas personales**
+  - Registro de **ingresos** y **gastos** asociados a usuario.
+  - Tipos de ingresos y categorías de gastos personalizables.
+  - Dashboard con resumen anual, comparación de ingresos vs gastos y gráfico de gastos por categoría.
+- **Tareas y productividad**
+  - Gestión de tareas con estados (pendiente, en progreso, completada).
+  - Indicadores de tareas del año actual e integración con el dashboard.
+- **Gestión de personas (RRHH)**
+  - Gestión de empleados, cargos, departamentos y compañías.
+  - Módulo de nóminas con ficha PDF del empleado.
+  - Registro de ausencias, licencias médicas y vacaciones.
+- **Evaluaciones de desempeño**
+  - Definición de ciclos de evaluación.
+  - Objetivos estratégicos y objetivos por empleado.
+  - Seguimientos periódicos (check-ins) y cálculo automático de desempeño y bonos.
+- **Encuestas internas**
+  - Creación y publicación de encuestas.
+  - Landing pública para acceso a encuestas.
+  - Exportación de respuestas y generación de reportes.
+- **Calendarios y reuniones**
+  - Sincronización con calendarios CalDAV.
+  - Gestión de reuniones e integración con Zoom.
+- **Colaboración y comunicación**
+  - Chat interno en tiempo real (Wirechat + Laravel Reverb).
+  - Webmail integrado mediante IMAP/CPANEL.
+  - Gestor de archivos con WebDAV y visualización/edición mediante OnlyOffice.
+- **Panel administrativo moderno**
+  - Construido con **Filament 4**.
+  - Roles y permisos con **Filament Shield**.
+  - Selector de idioma (es/en) mediante **laravel-lang** y language switcher.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🧱 Tecnologías
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Backend**
+  - PHP 8.2+
+  - Laravel 12.x
+  - Filament 4 (panel administrativo, recursos, widgets)
+  - Laravel Reverb (websockets y tiempo real)
+  - PestPHP (testing)
+- **Integraciones clave**
+  - Zoom (videoconferencias)
+  - CalDAV / SabreDAV (calendarios)
+  - WebDAV + OnlyOffice (gestión de archivos y edición colaborativa)
+  - Wirechat (chat interno)
+- **Frontend**
+  - Vite + Tailwind CSS (a través del stack por defecto de Laravel)
+  - Livewire + Filament widgets para dashboards y gráficos.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## ✅ Requisitos
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- PHP **8.2** o superior.
+- Extensiones típicas de Laravel habilitadas (mbstring, openssl, pdo, etc.).
+- Composer.
+- Node.js y npm.
+- Servidor de base de datos (MySQL/MariaDB, PostgreSQL u otro soportado por Laravel).
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## ⚙️ Puesta en marcha en local
 
-## Contributing
+Clona el repositorio y entra en el directorio del proyecto:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+git clone <tu-repo.git> finanzasPersonales
+cd finanzasPersonales
+```
 
-## Code of Conduct
+Instala las dependencias de PHP:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+composer install
+```
 
-## Security Vulnerabilities
+Copia el archivo de entorno y genera la clave de la aplicación:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## License
+Configura en `.env` al menos:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Conexión a base de datos (`DB_*`).
+- URL de la aplicación (`APP_URL`).
+- Credenciales de correo (`MAIL_*`).
+- Parámetros de broadcasting/queue/websockets según tu entorno (Reverb).
+- Integraciones opcionales: Zoom, WebDAV/OnlyOffice, cuentas de correo, etc.
+
+Ejecuta las migraciones (y opcionalmente seeders de ejemplo si los habilitas):
+
+```bash
+php artisan migrate
+# php artisan db:seed   # opcional
+```
+
+Instala dependencias de frontend y compila los assets:
+
+```bash
+npm install
+npm run dev   # para entorno de desarrollo
+```
+
+También puedes usar los scripts definidos en `composer.json`:
+
+```bash
+composer run setup   # instala backend, genera .env, migra y build de frontend
+composer run dev     # arranca servidor PHP, cola y Vite en paralelo
+```
+
+Accede a la aplicación en tu navegador (por defecto):
+
+- `http://localhost:8000` para el frontend principal.
+- Panel Filament (admin): típicamente `/admin` (ajústalo según tu configuración).
+
+---
+
+## 🧪 Pruebas
+
+El proyecto utiliza **PestPHP** para las pruebas automatizadas. Puedes ejecutar el suite completo con:
+
+```bash
+composer test
+```
+
+Antes de commitear, es recomendable ejecutar:
+
+- `composer test` para validar el backend.
+- `npm run build` para asegurar que el frontend compila correctamente.
+
+---
+
+## 🗂 Estructura destacada del proyecto
+
+Algunos directorios relevantes:
+
+- `app/Filament/Pages`  
+  Páginas personalizadas del panel (dashboards, chats, file manager, etc.).
+- `app/Filament/Resources`  
+  Recursos de Filament para ingresos, gastos, tareas, empleados, evaluaciones, encuestas, calendarios, etc.
+- `app/Livewire`  
+  Widgets dinámicos de dashboard (gráfico de resumen anual, gastos por categoría, contadores, marcadores, etc.).
+- `app/Services`  
+  Servicios de integración (CalDav, Zoom, IMAP, WebDAV, encuestas, AI de apreciación, etc.).
+- `app/Http/Controllers`  
+  Controladores para formularios públicos, encuestas, WebDAV, OnlyOffice, compartición de archivos, etc.
+- `lang/es` y `lang/en`  
+  Traducciones para panel, dashboards, evaluaciones, nóminas, encuestas y otros módulos.
+
+---
+
+## 🤝 Contribución
+
+Las contribuciones son bienvenidas. Antes de abrir un PR:
+
+- Sigue las convenciones de codificación de Laravel/Filament.
+- Mantén la nomenclatura y estructura actuales de recursos y servicios.
+- Asegúrate de que las pruebas pasan correctamente.
+
+---
+
+## 📄 Licencia
+
+Este proyecto está disponible bajo la licencia **MIT**, en línea con el esqueleto oficial de Laravel. Puedes utilizarlo, modificarlo y redistribuirlo respetando los términos de dicha licencia.
+
+---
+
+Si necesitas adaptar este proyecto a un caso de uso específico (solo finanzas personales, solo RRHH, etc.), la arquitectura basada en recursos Filament y servicios desacoplados facilita habilitar o deshabilitar módulos según tus necesidades.
