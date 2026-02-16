@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Sidebar */
+.fi-sidebar-nav {
+  @apply bg-slate-50 dark:bg-gray-900;
+}
+
+/*.fi-topbar{
+  @apply bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800;
+}*/
+
+.fi-sidebar-item {
+  @apply text-gray-600 dark:text-gray-400;
+}
+
+/* item activo */
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+  @apply bg-primary-50 text-primary-600 dark:bg-white/5 dark:text-primary-400;
+}
+
+/* Contenedor principal */
+.fi-simple-main-ctn {
+  @apply flex items-center justify-start w-full h-auto bg-cover bg-center p-0;
+  background-image: url('/asset/images/fondo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Panel simple */
+.fi-simple-main {
+  @apply rounded-none m-0 bg-white/90 backdrop-blur-sm dark:bg-gray-900/90 flex flex-col justify-center h-screen p-5;
+}
+
+/* Página interna */
+.fi-simple-page {
+  @apply rounded-lg border border-gray-200 dark:border-gray-700 p-6 w-full shadow-lg bg-white dark:bg-gray-800;
+}
+
+/* Botones y utilidades */
+.btn-submit { @apply mt-5; }
+.btn-add-task { @apply mb-5 self-end; }
+
+.fi-global-search-ctn {
+  @apply w-full mx-auto p-3 !bg-slate-50 dark:!bg-gray-900 border-b border-gray-200 dark:border-gray-800;
+}
+.fi-sidebar .fi-global-search-ctn {
+  @apply mt-0;
+}
+
+/* Body text color */
+.fi-body {
+  @apply text-gray-900 dark:text-white;
+}
+
+.buttom_home_filemanager{
+  @apply p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
+}

@@ -1,0 +1,1 @@
+@livewire('dimensions-catalog-modal')
