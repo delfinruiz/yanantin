@@ -5,8 +5,5 @@ deployment:
     - /usr/bin/rsync -av --delete --exclude ".env*" --exclude "node_modules/" --exclude "vendor/" --exclude ".git/" --exclude "storage/" --exclude "public/storage/" ./ $DEPLOYPATH
     - cd $DEPLOYPATH
     - /usr/local/bin/php /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
-    - /usr/local/bin/php artisan config:cache
-    - /usr/local/bin/php artisan route:cache
-    - /usr/local/bin/php artisan view:cache
-    - /usr/local/bin/php artisan event:cache
+    - /usr/local/bin/php artisan optimize:clear || true
     - /usr/local/bin/php artisan storage:link || true
