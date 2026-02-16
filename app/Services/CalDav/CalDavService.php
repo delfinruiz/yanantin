@@ -232,6 +232,10 @@ class CalDavService
                     $headers['If-Match'] = $props['{DAV:}getetag'] ?? null;
                     continue;
                 }
+                if ($e->getHttpStatus() === 404) {
+                    $result = $this->createEvent($emailAccount, $calendar, $event);
+                    return $result['etag'] ?? null;
+                }
                 if ($tries >= 3) {
                     throw $e;
                 }
@@ -258,6 +262,15 @@ class CalDavService
             try {
                 $client->request('DELETE', $path);
                 return;
+            } catch (\Sabre\HTTP\ClientHttpException $e) {
+                if ($e->getHttpStatus() === 404) {
+                    return;
+                }
+                $tries++;
+                if ($tries >= 3) {
+                    throw $e;
+                }
+                usleep(250000 * $tries);
             } catch (\Throwable $e) {
                 $tries++;
                 if ($tries >= 3) {
@@ -323,6 +336,18 @@ class CalDavService
                     foreach (CalDavParser::parseVCalendar($ics) as $parsed) {
                         $parsed['etag'] = $etag;
                         $results[] = $parsed;
+                    }
+                } catch (\Sabre\HTTP\ClientHttpException $e) {
+                    if ($e->getHttpStatus() === 404) {
+                        Log::warning('CalDAV syncDown GET 404', [
+                            'href' => $href,
+                        ]);
+                    } else {
+                        Log::error('CalDAV syncDown GET error', [
+                            'href' => $href,
+                            'status' => $e->getHttpStatus(),
+                            'message' => $e->getMessage(),
+                        ]);
                     }
                 } catch (\Throwable $e) {
                     Log::error('CalDAV syncDown GET error: ' . $e->getMessage(), [

@@ -1,7 +1,7 @@
 # Finanzas Personales
 
-Plataforma web para gestionar finanzas personales y procesos internos de personas (RRHH), construida sobre Laravel 12 y Filament 4.  
-Permite registrar ingresos y gastos, visualizar dashboards financieros, gestionar tareas, encuestas, evaluaciones de desempeño, reuniones, archivos y mucho más, todo desde un único panel administrativo.
+Plataforma web para gestionar procesos internos de personas (RRHH), construida sobre Laravel 12 y Filament 4.  
+Permite registrar gestionar tareas, encuestas, evaluaciones de desempeño, reuniones, archivos y mucho más, todo desde un único panel administrativo.
 
 <p align="left">
   <img src="https://img.shields.io/badge/PHP-%5E8.2-777BB4?logo=php" alt="PHP 8.2">
@@ -14,10 +14,6 @@ Permite registrar ingresos y gastos, visualizar dashboards financieros, gestiona
 
 ## 🚀 Características principales
 
-- **Finanzas personales**
-  - Registro de **ingresos** y **gastos** asociados a usuario.
-  - Tipos de ingresos y categorías de gastos personalizables.
-  - Dashboard con resumen anual, comparación de ingresos vs gastos y gráfico de gastos por categoría.
 - **Tareas y productividad**
   - Gestión de tareas con estados (pendiente, en progreso, completada).
   - Indicadores de tareas del año actual e integración con el dashboard.
@@ -36,10 +32,14 @@ Permite registrar ingresos y gastos, visualizar dashboards financieros, gestiona
 - **Calendarios y reuniones**
   - Sincronización con calendarios CalDAV.
   - Gestión de reuniones e integración con Zoom.
+- **Gestión de archivos**
+  - Explorador de archivos tipo “drive” con carpetas y permisos por usuario/rol.
+  - Compartir archivos mediante enlaces públicos con expiración y/o código de acceso.
+  - Soporte WebDAV para montar el repositorio como unidad de red.
+  - Edición online de documentos mediante OnlyOffice.
 - **Colaboración y comunicación**
   - Chat interno en tiempo real (Wirechat + Laravel Reverb).
   - Webmail integrado mediante IMAP/CPANEL.
-  - Gestor de archivos con WebDAV y visualización/edición mediante OnlyOffice.
 - **Panel administrativo moderno**
   - Construido con **Filament 4**.
   - Roles y permisos con **Filament Shield**.
