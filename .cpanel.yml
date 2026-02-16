@@ -1,7 +1,6 @@
 ---
 deployment:
   tasks:
-    - composer install --no-dev --optimize-autoloader --no-interaction || true
     - chmod -R 755 storage bootstrap/cache
     - php artisan key:generate --force || true
     - php artisan migrate --force || true
