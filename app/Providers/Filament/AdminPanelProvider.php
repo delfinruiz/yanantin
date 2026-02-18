@@ -132,6 +132,10 @@ class AdminPanelProvider extends PanelProvider
                 'panels::body.end',
                 fn(): string => Blade::render('@livewire(\'absences.pending-approvals-badge-poll\')'),
             )
+            ->renderHook(
+                'panels::body.end',
+                fn(): string => Blade::render('@livewire(\'mood-prompt-overlay\')'),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -141,6 +145,8 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 PrincipalMarcadoresWidget::class,
                 GraficoResumenAnualWidgetPrincipal::class,
+                \App\Filament\Widgets\DailyMoodWidget::class,
+                \App\Filament\Widgets\CompanyHappinessBarWidget::class,
 
             ])
             ->navigationItems([
