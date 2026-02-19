@@ -15,15 +15,16 @@ class MonthlyDashboard extends Page
 
     protected string $view = 'filament.pages.monthly-dashboard';
 
-    // Ocultar de la navegación para evitar redirección automática si no es deseado
-    protected static bool $shouldRegisterNavigation = false;
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Scale;
 
-        //funcion personalizar titulo del menu
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.my_apps');
+    }
+
     public static function getNavigationLabel(): string
     {
-        return __('monthly_dashboard');
+        return __('navigation.labels.my_finances');
     }
 
     public function getTitle(): string

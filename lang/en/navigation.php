@@ -16,5 +16,6 @@ return [
         'my_meetings' => 'My Meetings',
         'my_tasks' => 'My Tasks',
         'my_objectives' => 'My Objectives',
+        'my_finances' => 'My Finances',
     ],
 ];
