@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
                 LocationSeeder::class,
                 StatusSeeder::class,
                 PermissionsTaskSeeder::class,
+                ContractTypeSeeder::class,
     ]);
 
     Item::factory(50)->create();

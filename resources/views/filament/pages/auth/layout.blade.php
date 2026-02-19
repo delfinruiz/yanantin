@@ -1,9 +1,14 @@
 @php
-    $settings = app(\App\Services\SettingService::class)->getSettings();
-    $logo_light = $settings->logo_light ? \Illuminate\Support\Facades\Storage::url($settings->logo_light) : asset('asset/images/logo-light.png');
-    $logo_dark = $settings->logo_dark ? \Illuminate\Support\Facades\Storage::url($settings->logo_dark) : asset('asset/images/logo-dark.png');
-    $company_name = $settings->company_name ?? config('app.name');
-    $favicon = $settings->favicon ? \Illuminate\Support\Facades\Storage::url($settings->favicon) : asset('favicon.ico');
+    $settingService = app(\App\Services\SettingService::class);
+
+    $rawLogoLight = $settingService->get('logo_light');
+    $rawLogoDark = $settingService->get('logo_dark');
+    $rawFavicon = $settingService->get('favicon');
+    $company_name = $settingService->get('company_name', config('app.name'));
+
+    $logo_light = $rawLogoLight ? \Illuminate\Support\Facades\Storage::url($rawLogoLight) : asset('asset/images/logo-light.png');
+    $logo_dark = $rawLogoDark ? \Illuminate\Support\Facades\Storage::url($rawLogoDark) : asset('asset/images/logo-dark.png');
+    $favicon = $rawFavicon ? \Illuminate\Support\Facades\Storage::url($rawFavicon) : asset('favicon.ico');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">

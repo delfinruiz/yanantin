@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,22 +12,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('absence_requests', function (Blueprint $table) {
-            // Drop existing foreign keys
-            $table->dropForeign(['hr_user_id']);
-            $table->dropForeign(['supervisor_id']);
+        if (Schema::hasTable('absence_requests')) {
+            try {
+                DB::statement('ALTER TABLE `absence_requests` DROP FOREIGN KEY `absence_requests_hr_user_id_foreign`');
+            } catch (\Throwable $e) {}
+            try {
+                DB::statement('ALTER TABLE `absence_requests` DROP FOREIGN KEY `absence_requests_supervisor_id_foreign`');
+            } catch (\Throwable $e) {}
 
-            // Re-add foreign keys with ON DELETE SET NULL
-            $table->foreign('hr_user_id')
-                ->references('id')
-                ->on('users')
-                ->nullOnDelete();
-
-            $table->foreign('supervisor_id')
-                ->references('id')
-                ->on('users')
-                ->nullOnDelete();
-        });
+            try {
+                DB::statement('ALTER TABLE `absence_requests` ADD CONSTRAINT `absence_requests_hr_user_id_foreign` FOREIGN KEY (`hr_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL');
+            } catch (\Throwable $e) {}
+            try {
+                DB::statement('ALTER TABLE `absence_requests` ADD CONSTRAINT `absence_requests_supervisor_id_foreign` FOREIGN KEY (`supervisor_id`) REFERENCES `users`(`id`) ON DELETE SET NULL');
+            } catch (\Throwable $e) {}
+        }
     }
 
     /**
@@ -34,18 +34,20 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('absence_requests', function (Blueprint $table) {
-            $table->dropForeign(['hr_user_id']);
-            $table->dropForeign(['supervisor_id']);
+        if (Schema::hasTable('absence_requests')) {
+            try {
+                DB::statement('ALTER TABLE `absence_requests` DROP FOREIGN KEY `absence_requests_hr_user_id_foreign`');
+            } catch (\Throwable $e) {}
+            try {
+                DB::statement('ALTER TABLE `absence_requests` DROP FOREIGN KEY `absence_requests_supervisor_id_foreign`');
+            } catch (\Throwable $e) {}
 
-            // Revert to original constraints (restrict/no action default)
-            $table->foreign('hr_user_id')
-                ->references('id')
-                ->on('users');
-
-            $table->foreign('supervisor_id')
-                ->references('id')
-                ->on('users');
-        });
+            try {
+                DB::statement('ALTER TABLE `absence_requests` ADD CONSTRAINT `absence_requests_hr_user_id_foreign` FOREIGN KEY (`hr_user_id`) REFERENCES `users`(`id`)');
+            } catch (\Throwable $e) {}
+            try {
+                DB::statement('ALTER TABLE `absence_requests` ADD CONSTRAINT `absence_requests_supervisor_id_foreign` FOREIGN KEY (`supervisor_id`) REFERENCES `users`(`id`)');
+            } catch (\Throwable $e) {}
+        }
     }
 };

@@ -20,7 +20,7 @@ class ExpenseCategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'Categoria de Gastos';
+    protected static ?string $recordTitleAttribute = 'name';
 
     //cambiar label modelo
     public static function getModelLabel(): string

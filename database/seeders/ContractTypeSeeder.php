@@ -17,6 +17,8 @@ class ContractTypeSeeder extends Seeder
         $types = [
             'Indefinido',
             'Plazo Fijo',
+            'Plazo Fijo (Reemplazo)',
+            'Plazo Fijo (Proyecto)',
             'Por Obra o Faena',
             'Part-Time',
             'Honorarios',
