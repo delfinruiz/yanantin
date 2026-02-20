@@ -14,6 +14,8 @@ use App\Filament\Pages\MySurveys;
 class PrincipalMarcadoresWidget extends BaseWidget
 {
     protected ?string $pollingInterval = null;
+    protected int|string|array $columnSpan = 9;
+    protected static ?int $sort = 3;
     //protected ?string $heading = 'Año Actual';
 
     //protected ?string $description = 'Contador de tareas pendientes, en curso y completadas en el año actual';

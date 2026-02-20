@@ -14,6 +14,7 @@ class Setting extends Model
         'company_name',
         'token_cpanel',
         'token_ai',
+        'birthday_greeting_template',
         'token_zadarma',
         'token_sms',
         'token_email_marketing',

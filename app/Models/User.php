@@ -19,6 +19,7 @@ use Wirechat\Wirechat\Panel;
 
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne as RelationsHasOne;
 
 class User extends Authenticatable implements HasAvatar, WirechatUser, MustVerifyEmail
 {
@@ -153,19 +154,13 @@ class User extends Authenticatable implements HasAvatar, WirechatUser, MustVerif
         return $this->hasMany(Response::class);
     }
 
-    /**
-     * Determine if the user has verified their email address.
-     *
-     * @return bool
-     */
     public function hasVerifiedEmail()
     {
-        // Si tiene cuenta de correo asignada, se considera verificado automáticamente
         if ($this->emailAccount()->exists()) {
             return true;
         }
 
-        return ! is_null($this->email_verified_at);
+        return $this->email_verified_at !== null;
     }
 
     public function canAccessWirechatPanel(Panel $panel): bool
@@ -176,5 +171,10 @@ class User extends Authenticatable implements HasAvatar, WirechatUser, MustVerif
     public function employeeProfile(): HasOne
     {
         return $this->hasOne(EmployeeProfile::class);
+    }
+
+    public function birthdayGreeting(): RelationsHasOne
+    {
+        return $this->hasOne(BirthdayGreeting::class);
     }
 }

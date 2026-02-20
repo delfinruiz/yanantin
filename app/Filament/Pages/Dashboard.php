@@ -7,8 +7,11 @@ use Filament\Support\Enums\Width;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use App\Filament\Widgets\CompanyHappinessBarWidget;
 use App\Filament\Widgets\DailyMoodWidget;
-use App\Livewire\PrincipalMarcadoresWidget;
+use App\Livewire\PagarStatsWidget;
+use App\Livewire\HacerStatsWidget;
 use App\Livewire\GraficoResumenAnualWidgetPrincipal;
+use App\Filament\Widgets\TodaysBirthdays;
+
 
 class Dashboard extends BaseDashboard
 {
@@ -20,13 +23,16 @@ class Dashboard extends BaseDashboard
         return __('dashboard.navigation_label');
     }
 
-    //full width
     public function getMaxContentWidth(): Width
     {
         return Width::Full;
     }
 
-    //cambiar titulo de la página
+    public function getColumns(): int | array
+    {
+        return 12;
+    }
+
     public function getTitle(): string
     {
         return __('dashboard.title');
@@ -37,9 +43,10 @@ class Dashboard extends BaseDashboard
         return [
             CompanyHappinessBarWidget::class,
             DailyMoodWidget::class,
-            PrincipalMarcadoresWidget::class,
+            PagarStatsWidget::class,
+            HacerStatsWidget::class,
+            TodaysBirthdays::class,
             GraficoResumenAnualWidgetPrincipal::class,
-
         ];
     }
 }

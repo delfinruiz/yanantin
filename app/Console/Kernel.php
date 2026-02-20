@@ -11,6 +11,6 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('evaluation:notify-windows')->hourly();
         $schedule->command('evaluation-cycles:update-status')->daily();
+        $schedule->command('birthdays:send-today')->dailyAt('08:00');
     }
 }
-

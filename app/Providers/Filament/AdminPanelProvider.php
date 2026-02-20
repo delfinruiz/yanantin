@@ -22,7 +22,8 @@ use App\Filament\Plugins\CustomFilamentEditProfilePlugin;
 use Illuminate\Support\Facades\Auth;
 use App\Filament\Pages\Dashboard;
 use App\Livewire\GraficoResumenAnualWidgetPrincipal;
-use App\Livewire\PrincipalMarcadoresWidget;
+use App\Livewire\PagarStatsWidget;
+use App\Livewire\HacerStatsWidget;
 use App\Models\EmailAccount;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
@@ -143,11 +144,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                PrincipalMarcadoresWidget::class,
+                PagarStatsWidget::class,
+                HacerStatsWidget::class,
                 GraficoResumenAnualWidgetPrincipal::class,
                 \App\Filament\Widgets\DailyMoodWidget::class,
                 \App\Filament\Widgets\CompanyHappinessBarWidget::class,
-
+                \App\Filament\Widgets\TodaysBirthdays::class,
             ])
             ->navigationItems([
                 \Filament\Navigation\NavigationItem::make('Mis Correos')

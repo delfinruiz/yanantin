@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Mood;
+use App\Models\User;
 use App\Services\AiMessageService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -15,12 +16,20 @@ class MoodPromptOverlay extends Component
 
     public function mount(): void
     {
-        $userId = Auth::id();
-        if (! $userId) {
+        $authUser = Auth::user();
+        if (! $authUser instanceof User) {
             return;
         }
 
-        $this->today = Mood::where('user_id', $userId)
+        $isInternal = $authUser->emailAccount()->exists();
+        $isSuperAdmin = $authUser->hasRole(config('filament-shield.super_admin.name', 'super_admin'));
+
+        if (! $isInternal && ! $isSuperAdmin) {
+            $this->showPrompt = false;
+            return;
+        }
+
+        $this->today = Mood::where('user_id', $authUser->id)
             ->whereDate('date', Carbon::today())
             ->first();
 

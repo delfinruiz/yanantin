@@ -10,6 +10,7 @@ use Livewire\Attributes\On;
 class CompanyHappinessBarWidget extends Widget
 {
     protected string $view = 'filament.widgets.company-happiness-bar-widget';
+    protected static ?int $sort = 1;
 
     public int $level = 3;
     public array $distribution = [];
@@ -17,6 +18,7 @@ class CompanyHappinessBarWidget extends Widget
     public int $triangleLeft = 50;
 
     protected static bool $isLazy = false;
+    protected int|string|array $columnSpan = 6;
 
     public function mount(): void
     {

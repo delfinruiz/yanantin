@@ -12,10 +12,12 @@ use Livewire\Attributes\On;
 class DailyMoodWidget extends Widget
 {
     protected string $view = 'filament.widgets.daily-mood-widget';
+    protected static ?int $sort = 2;
 
     public ?Mood $today = null;
 
     protected static bool $isLazy = false;
+    protected int|string|array $columnSpan = 6;
 
     public function mount(): void
     {

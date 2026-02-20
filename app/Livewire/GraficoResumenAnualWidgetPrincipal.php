@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 class GraficoResumenAnualWidgetPrincipal extends ChartWidget
 {
     use InteractsWithPageFilters;
+    protected static ?int $sort = 6;
 
     public function getHeading(): string
     {

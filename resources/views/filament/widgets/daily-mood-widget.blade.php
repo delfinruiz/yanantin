@@ -8,13 +8,15 @@
     ];
 @endphp
 
-<x-filament::section>
-    @if($today?->message)
-        <div>
-            <div class="text-sm text-success-600 font-semibold mb-1">Mensaje del día</div>
-            <div class="rounded-lg border border-success-300 bg-success-50 p-4 text-success-900">
-                “{{ $today->message }}”
+<x-filament-widgets::widget>
+    <x-filament::section>
+        @if($today?->message)
+            <div>
+                <div class="text-sm text-success-600 font-semibold mb-1">Mensaje del día</div>
+                <div class="rounded-lg border border-success-300 bg-success-50 p-4 text-success-900">
+                    “{{ $today->message }}”
+                </div>
             </div>
-        </div>
-    @endif
-</x-filament::section>
+        @endif
+    </x-filament::section>
+</x-filament-widgets::widget>
