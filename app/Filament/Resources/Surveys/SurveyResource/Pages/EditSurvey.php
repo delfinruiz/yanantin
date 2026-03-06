@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\SurveyAssignedMail;
 use App\Services\MailGuardService;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Illuminate\Support\Facades\DB;
 use Filament\Support\Enums\Width;
 
@@ -21,6 +22,42 @@ class EditSurvey extends EditRecord
     public function getMaxContentWidth(): Width
     {
         return Width::Full;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            DeleteAction::make()
+                ->disabled(fn (Survey $record) => $record->questions()->whereHas('responses')->exists())
+                ->tooltip(fn (Survey $record) => $record->questions()->whereHas('responses')->exists() ? __('No se puede borrar porque tiene respuestas') : null),
+        ];
+    }
+
+    public bool $shouldRedirect = false;
+
+    public function saveAndRedirect(): void
+    {
+        $this->shouldRedirect = true;
+        $this->save();
+        $this->shouldRedirect = false;
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getSaveFormAction()
+                ->action('saveAndRedirect')
+                ->submit(null),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getRedirectUrl(): ?string
+    {
+        if ($this->shouldRedirect) {
+            return $this->getResource()::getUrl('index');
+        }
+        return null;
     }
 
 
@@ -38,22 +75,33 @@ class EditSurvey extends EditRecord
             $record->save();
         }
         $assignAll = $this->data['assign_all'] ?? false;
+        $assignPublicRole = $this->data['assign_public_role'] ?? false;
         $deptIds = $this->data['departments'] ?? $record->departments()->pluck('departments.id')->all();
 
+        $targetUserIds = collect();
+
         if ($assignAll) {
-            $userIds = User::pluck('id')->all();
-            $payload = collect($userIds)->mapWithKeys(fn ($id) => [$id => ['assigned_at' => now()]])->all();
-            $record->users()->sync($payload);
+            // Asignar a todos los internos
+            $targetUserIds = $targetUserIds->merge(User::where('is_internal', true)->pluck('id'));
             $record->departments()->detach();
         } else {
             $record->departments()->sync($deptIds ?? []);
-            $userIds = [];
             if (!empty($deptIds)) {
-                $userIds = User::whereHas('departments', fn ($q) => $q->whereIn('departments.id', $deptIds))->pluck('id')->all();
+                $deptUserIds = User::where('is_internal', true)
+                    ->whereHas('departments', fn ($q) => $q->whereIn('departments.id', $deptIds))
+                    ->pluck('id');
+                $targetUserIds = $targetUserIds->merge($deptUserIds);
             }
-            $payload = collect($userIds)->mapWithKeys(fn ($id) => [$id => ['assigned_at' => now()]])->all();
-            $record->users()->sync($payload);
         }
+
+        if ($assignPublicRole) {
+            // Asignar rol public
+            $publicUserIds = User::role('public')->pluck('id');
+            $targetUserIds = $targetUserIds->merge($publicUserIds);
+        }
+
+        $payload = $targetUserIds->unique()->mapWithKeys(fn ($id) => [$id => ['assigned_at' => now()]])->all();
+        $record->users()->sync($payload);
 
         if ($record->active) {
             $recipientIds = $record->users()->pluck('users.id')->all();

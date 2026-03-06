@@ -16,7 +16,10 @@
   @yield('css')
 </head>
 
-<body x-data="{ page: 'home', 'darkMode': true, 'stickyMenu': false, 'navigationOpen': false, 'scrollTop': false }"
+@php
+    $currentRouteName = \Illuminate\Support\Facades\Route::currentRouteName() ?? 'home';
+@endphp
+<body x-data="{ page: '{{ $currentRouteName }}', 'darkMode': true, 'stickyMenu': false, 'navigationOpen': false, 'scrollTop': false }"
   x-init="
         
         systemMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

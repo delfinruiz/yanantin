@@ -54,6 +54,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('poppins')
             ->id('admin')
             ->path('admin')
+            ->homeUrl(fn () => \App\Filament\Pages\PanelLanding::getUrl(panel: 'admin'))
             ->passwordReset()
             ->emailVerification()
             ->emailChangeVerification()
@@ -74,6 +75,9 @@ class AdminPanelProvider extends PanelProvider
                     ->label(__('filament-navigation.my_apps'))
                     ->icon('heroicon-o-squares-2x2'),
                 NavigationGroup::make()
+                    ->label('Gestión Laboral')
+                    ->icon('heroicon-o-briefcase'),
+                NavigationGroup::make()
                     ->label(__('filament-navigation.hr'))
                     ->icon('heroicon-o-clipboard-document-list'),
                 NavigationGroup::make()
@@ -92,7 +96,7 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->renderHook(
                 'panels::head.end',
-                fn(): string => Blade::render("@vite(['resources/js/app.js'])"),
+                fn (): string => Blade::render("@vite(['resources/js/app.js'])"),
             )
             ->renderHook(
                 'panels::body.end',
@@ -139,9 +143,6 @@ class AdminPanelProvider extends PanelProvider
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
-            ->pages([
-                Dashboard::class,
-            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 PagarStatsWidget::class,
@@ -207,6 +208,10 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+            ])
+            ->authMiddleware([
+                \App\Http\Middleware\RedirectPublicFromAdmin::class,
+                Authenticate::class,
             ])
             ->userMenuItems([
                 'profile' => Action::make('profile')

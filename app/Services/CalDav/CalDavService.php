@@ -281,7 +281,7 @@ class CalDavService
         }
     }
 
-    public function syncDown(EmailAccount $emailAccount, Calendar $calendar, ?string $syncToken = null): array
+    public function listEvents(EmailAccount $emailAccount, Calendar $calendar): array
     {
         $client = $this->clientFor($emailAccount);
 
@@ -298,13 +298,7 @@ class CalDavService
         $results = [];
         if (is_array($response) && isset($response['body'])) {
             $xml = $response['body'];
-            Log::debug('CalDAV syncDown PROPFIND response', [
-                'status' => $response['statusCode'] ?? null,
-                'length' => strlen($xml),
-            ]);
-            Log::debug('CalDAV syncDown PROPFIND body snippet', [
-                'xml' => substr($xml, 0, 1000),
-            ]);
+            // ... logging ...
 
             $dom = new \DOMDocument();
             $dom->loadXML($xml);
@@ -321,42 +315,68 @@ class CalDavService
                 }
 
                 if (!str_ends_with($href, '.ics')) {
-                    Log::debug('CalDAV syncDown skipping non-ICS href', ['href' => $href]);
                     continue;
                 }
+                
+                // Clean href (remove status line if present)
+                $href = trim($href);
+                $etag = trim($etag, '"'); // Remove quotes from ETag if present
 
-                Log::debug('CalDAV syncDown fetching ICS', ['href' => $href]);
-
-                try {
-                    $eventResponse = $client->request('GET', $href);
-                    if (!is_array($eventResponse) || !isset($eventResponse['body'])) {
-                        continue;
-                    }
-                    $ics = $eventResponse['body'];
-                    foreach (CalDavParser::parseVCalendar($ics) as $parsed) {
-                        $parsed['etag'] = $etag;
-                        $results[] = $parsed;
-                    }
-                } catch (\Sabre\HTTP\ClientHttpException $e) {
-                    if ($e->getHttpStatus() === 404) {
-                        Log::warning('CalDAV syncDown GET 404', [
-                            'href' => $href,
-                        ]);
-                    } else {
-                        Log::error('CalDAV syncDown GET error', [
-                            'href' => $href,
-                            'status' => $e->getHttpStatus(),
-                            'message' => $e->getMessage(),
-                        ]);
-                    }
-                } catch (\Throwable $e) {
-                    Log::error('CalDAV syncDown GET error: ' . $e->getMessage(), [
-                        'href' => $href,
-                    ]);
-                }
+                $results[] = [
+                    'href' => $href,
+                    'etag' => $etag,
+                ];
             }
         }
 
+        return $results;
+    }
+
+    public function fetchEvent(EmailAccount $emailAccount, string $href): ?array
+    {
+        $client = $this->clientFor($emailAccount);
+        try {
+            Log::debug('CalDAV fetchEvent', ['href' => $href]);
+            $eventResponse = $client->request('GET', $href);
+            if (!is_array($eventResponse) || !isset($eventResponse['body'])) {
+                return null;
+            }
+            $ics = $eventResponse['body'];
+            // Parse returns array of events, usually just one
+            $parsedEvents = CalDavParser::parseVCalendar($ics);
+            return $parsedEvents;
+        } catch (\Sabre\HTTP\ClientHttpException $e) {
+             if ($e->getHttpStatus() === 404) {
+                Log::warning('CalDAV fetchEvent 404', ['href' => $href]);
+            } else {
+                Log::error('CalDAV fetchEvent error', [
+                    'href' => $href,
+                    'status' => $e->getHttpStatus(),
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('CalDAV fetchEvent error: ' . $e->getMessage(), ['href' => $href]);
+        }
+        return null;
+    }
+
+    /**
+     * @deprecated Use listEvents and fetchEvent instead for better performance
+     */
+    public function syncDown(EmailAccount $emailAccount, Calendar $calendar, ?string $syncToken = null): array
+    {
+        $eventsMeta = $this->listEvents($emailAccount, $calendar);
+        $results = [];
+        foreach ($eventsMeta as $meta) {
+            $parsed = $this->fetchEvent($emailAccount, $meta['href']);
+            if ($parsed) {
+                foreach ($parsed as $p) {
+                    $p['etag'] = $meta['etag'];
+                    $results[] = $p;
+                }
+            }
+        }
         return $results;
     }
 

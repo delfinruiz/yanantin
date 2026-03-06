@@ -26,6 +26,7 @@ class Event extends Model
         'caldav_uid',
         'caldav_etag',
         'caldav_last_sync_at',
+        'caldav_href',
         'attachments',
     ];
 

@@ -3,7 +3,7 @@
 @endphp
 <x-filament-panels::page>
     <style>
-        .company-happiness-section{height:673px;display:flex;flex-direction:column;position:relative}
+        .company-happiness-section{min-height:673px;display:flex;flex-direction:column;position:relative}
         .company-happiness-section .fi-empty-state{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);margin:0}
         .company-happiness-section .fi-empty-state-content{margin:auto}
     </style>

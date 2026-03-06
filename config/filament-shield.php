@@ -192,6 +192,7 @@ return [
         'prefix' => 'view',
         'exclude' => [
             \Filament\Pages\Dashboard::class,
+            \App\Filament\Pages\PanelLanding::class,
             \App\Filament\Resources\Surveys\SurveyResource\Pages\RespondSurvey::class,
             \App\Filament\Resources\Surveys\SurveyResource\Pages\SurveyReport::class,
         ],

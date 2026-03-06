@@ -12,6 +12,10 @@ use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\FormBuilder\FormController;
  
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\JobOfferPublicController;
+use App\Http\Controllers\PublicDashboardController;
+use App\Http\Controllers\PublicRegisterController;
 
 Route::get('/', function () { 
     return view('home'); 
@@ -20,10 +24,22 @@ Route::get('/features', function () {
     return view('pages.portada.features'); 
 })->name('features');
 
+// Trabaja con Nosotros - sección pública
+Route::get('/trabaja-con-nosotros', [JobOfferPublicController::class, 'index'])
+    ->name('careers.index');
+Route::get('/trabaja-con-nosotros/oferta/{jobOffer}', [JobOfferPublicController::class, 'show'])
+    ->name('careers.show');
+
 Route::get('/login', function () {
-    return redirect()->route('filament.admin.auth.login');
+    return redirect()->route('filament.public.auth.login');
 })->name('login');
 
+Route::middleware('guest')->group(function () {
+    Route::get('/registro', [PublicRegisterController::class, 'create'])->name('signup');
+    Route::post('/registro', [PublicRegisterController::class, 'store'])->name('signup.store');
+});
+
+// /mi-panel ahora es manejado por el panel público de Filament (PublicPanelProvider)
 Route::get('/s/{token}', [PublicShareController::class, 'show'])->name('public.share');
 Route::get('/d/{token}', [PublicShareController::class, 'download'])->name('public.download');
 Route::get('/o/{token}', [OnlyOfficeController::class, 'openPublic'])->name('public.onlyoffice');

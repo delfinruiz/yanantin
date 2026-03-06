@@ -43,6 +43,11 @@ class PrincipalMarcadoresWidget extends BaseWidget
         ];
     }
 
+    protected function getColumns(): int | array
+    {
+        return 1;
+    }
+
     protected function pendingSurveysCount(): int
     {
         $userId = Auth::id();

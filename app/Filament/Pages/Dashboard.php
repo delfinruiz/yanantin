@@ -11,6 +11,7 @@ use App\Livewire\PagarStatsWidget;
 use App\Livewire\HacerStatsWidget;
 use App\Livewire\GraficoResumenAnualWidgetPrincipal;
 use App\Filament\Widgets\TodaysBirthdays;
+use Illuminate\Support\Facades\Auth;
 
 
 class Dashboard extends BaseDashboard
@@ -30,7 +31,10 @@ class Dashboard extends BaseDashboard
 
     public function getColumns(): int | array
     {
-        return 12;
+        return [
+            'sm' => 1,
+            'xl' => 12,
+        ];
     }
 
     public function getTitle(): string

@@ -37,7 +37,9 @@ use Illuminate\Support\Facades\Blade;
 
 
 use App\Models\User;
+use App\Models\JobApplication;
 use App\Observers\UserObserver;
+use App\Observers\JobApplicationObserver;
 use App\Services\SettingService;
 use Illuminate\Auth\Events\Login;
 use App\Listeners\JoinGlobalChat;
@@ -89,6 +91,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        JobApplication::observe(JobApplicationObserver::class);
+
         try {
             $settings = app(SettingService::class);
             $timezone = $settings->get('timezone');
@@ -140,6 +144,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             Login::class,
             JoinGlobalChat::class
+        );
+
+        Event::listen(
+            \App\Events\JobOfferPublished::class,
+            \App\Listeners\SendNewJobOfferNotification::class
         );
 
         // Eliminado: indicador de no leídos en topbar (se muestra como badge en el menú Webmail)

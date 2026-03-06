@@ -1,53 +1,17 @@
 <div class="space-y-4">
     <x-filament::section heading="{{ __('surveys.catalog.manage_heading') }}">
-    <div class="grid grid-cols-2 gap-3 items-end">
-        <div class="col-span-2">
-            <x-filament::input.wrapper>
-                <x-filament::input
-                    type="text"
-                    wire:model="survey_name"
-                    placeholder="{{ __('surveys.catalog.fields.survey_name') }}"
-                />
-            </x-filament::input.wrapper>
-        </div>
-        <div class="col-span-2">
-            <x-filament::input.wrapper>
-                <x-filament::input
-                    type="text"
-                    wire:model="item"
-                    placeholder="{{ __('surveys.catalog.fields.dimension') }}"
-                />
-            </x-filament::input.wrapper>
-        </div>
-        <div class="col-span-1">
-            <x-filament::input.wrapper>
-                <x-filament::input
-                    type="number"
-                    step="0.01"
-                    wire:model="kpi_target"
-                    placeholder="{{ __('surveys.catalog.fields.target') }}"
-                />
-            </x-filament::input.wrapper>
-        </div>
-        <div class="col-span-1">
-            <x-filament::input.wrapper>
-                <x-filament::input
-                    type="number"
-                    step="0.01"
-                    wire:model="weight"
-                    placeholder="{{ __('surveys.catalog.fields.weight') }}"
-                />
-            </x-filament::input.wrapper>
-        </div>
-        <div class="col-span-4 flex gap-2">
-            @if($editId)
-                <x-filament::button type="button" wire:click="saveEdit">{{ __('surveys.catalog.buttons.save') }}</x-filament::button>
-                <x-filament::button type="button" color="gray" wire:click="cancelEdit">{{ __('surveys.catalog.buttons.cancel') }}</x-filament::button>
-            @else
-                <x-filament::button type="button" wire:click="create">{{ __('surveys.catalog.buttons.create') }}</x-filament::button>
-            @endif
-        </div>
-    </div>
+        <form wire:submit="create">
+            {{ $this->form }}
+            
+            <div class="mt-4 flex gap-2">
+                @if($editId)
+                    <x-filament::button type="button" wire:click="saveEdit">{{ __('surveys.catalog.buttons.save') }}</x-filament::button>
+                    <x-filament::button type="button" color="gray" wire:click="cancelEdit">{{ __('surveys.catalog.buttons.cancel') }}</x-filament::button>
+                @else
+                    <x-filament::button type="submit">{{ __('surveys.catalog.buttons.create') }}</x-filament::button>
+                @endif
+            </div>
+        </form>
     </x-filament::section>
     <x-filament::section heading="{{ __('surveys.catalog.modal_heading') }}">
     <div class="w-full overflow-x-hidden">
@@ -76,8 +40,27 @@
                     <td class="py-2 px-2">{{ $d->weight !== null ? number_format($d->weight, 2) : '-' }}</td>
                     <td class="py-2 px-2">
                         <div class="flex items-center justify-center gap-2">
-                            <x-filament::icon-button icon="heroicon-m-pencil-square" color="primary" label="{{ __('surveys.catalog.buttons.edit') }}" tooltip="{{ __('surveys.catalog.buttons.edit') }}" type="button" wire:click="startEdit({{ $d->id }})" />
-                            <x-filament::icon-button icon="heroicon-m-trash" color="danger" label="{{ __('surveys.catalog.buttons.delete') }}" tooltip="{{ __('surveys.catalog.buttons.delete') }}" type="button" wire:click="delete({{ $d->id }})" />
+                            @php
+                                $hasResp = \App\Models\Survey::where('title', $d->survey_name)->first()?->questions()->whereHas('responses')->exists() ?? false;
+                            @endphp
+                            <x-filament::icon-button 
+                                icon="heroicon-m-pencil-square" 
+                                color="{{ $hasResp ? 'gray' : 'primary' }}" 
+                                label="{{ __('surveys.catalog.buttons.edit') }}" 
+                                tooltip="{{ $hasResp ? __('surveys.catalog.tooltips.cannot_edit_has_responses') : __('surveys.catalog.buttons.edit') }}" 
+                                type="button" 
+                                wire:click="startEdit({{ $d->id }})"
+                                :disabled="$hasResp" 
+                            />
+                            <x-filament::icon-button 
+                                icon="heroicon-m-trash" 
+                                color="{{ $hasResp ? 'gray' : 'danger' }}" 
+                                label="{{ __('surveys.catalog.buttons.delete') }}" 
+                                tooltip="{{ $hasResp ? __('surveys.catalog.tooltips.cannot_delete_has_responses') : __('surveys.catalog.buttons.delete') }}" 
+                                type="button" 
+                                wire:click="delete({{ $d->id }})"
+                                :disabled="$hasResp" 
+                            />
                         </div>
                     </td>
                 </tr>
@@ -91,4 +74,5 @@
         <x-filament::icon-button icon="heroicon-m-chevron-right" color="gray" label="{{ __('surveys.catalog.pagination.next') }}" tooltip="{{ __('surveys.catalog.pagination.next') }}" type="button" wire:click="nextPage" :disabled="$page >= $maxPage" />
     </div>
     </x-filament::section>
+    <x-filament-actions::modals />
 </div>

@@ -7,7 +7,10 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class PagarStatsWidget extends PrincipalMarcadoresWidget
 {
-    protected int|string|array $columnSpan = 4;
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'xl' => 4,
+    ];
     protected static ?int $sort = 3;
 
     protected function getStats(): array
@@ -24,4 +27,3 @@ class PagarStatsWidget extends PrincipalMarcadoresWidget
         ];
     }
 }
-

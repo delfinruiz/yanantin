@@ -12,7 +12,7 @@
               <img class="w-full" src="{{ asset('/asset/images/portada/blog-01.png') }}" alt="Blog" />
 
               <div class="im h r s df vd yc wg tc wf xf al hh/20 nl il z-10">
-                <a href="./blog-single.html" class="vc ek rg lk gh sl ml il gi hi">Read More</a>
+                <span class="vc ek rg lk gh sl ml il gi hi">Read More</span>
               </div>
             </div>
 
@@ -28,7 +28,7 @@
                 </div>
               </div>
               <h4 class="ek tj ml il kk wm xl eq lb">
-                <a href="blog-single.html">Free advertising for your online business</a>
+                <span>Free advertising for your online business</span>
               </h4>
             </div>
           </div>
@@ -39,7 +39,7 @@
               <img class="w-full" src="{{ asset('/asset/images/portada/blog-02.png') }}" alt="Blog" /> 
 
               <div class="im h r s df vd yc wg tc wf xf al hh/20 nl il z-10">
-                <a href="./blog-single.html" class="vc ek rg lk gh sl ml il gi hi">Read More</a>
+                <span class="vc ek rg lk gh sl ml il gi hi">Read More</span>
               </div>
             </div>
 
@@ -55,7 +55,7 @@
                 </div>
               </div>
               <h4 class="ek tj ml il kk wm xl eq lb">
-                <a href="blog-single.html">9 simple ways to improve your design skills</a>
+                <span>9 simple ways to improve your design skills</span>
               </h4>
             </div>
           </div>
@@ -66,7 +66,7 @@
               <img class="w-full" src="{{ asset('/asset/images/portada/blog-03.png') }}" alt="Blog" /> 
 
               <div class="im h r s df vd yc wg tc wf xf al hh/20 nl il z-10">
-                <a href="./blog-single.html" class="vc ek rg lk gh sl ml il gi hi">Read More</a>
+                <span class="vc ek rg lk gh sl ml il gi hi">Read More</span>
               </div>
             </div>
 
@@ -109,7 +109,7 @@
                 </div>
               </div>
               <h4 class="ek tj ml il kk wm xl eq lb">
-                <a href="blog-single.html">Free advertising for your online business</a>
+                <span>Free advertising for your online business</span>
               </h4>
             </div>
           </div>
@@ -120,7 +120,7 @@
               <img class="w-full" src="{{ asset('/asset/images/portada/blog-02.png') }}" alt="Blog" />
 
               <div class="im h r s df vd yc wg tc wf xf al hh/20 nl il z-10">
-                <a href="./blog-single.html" class="vc ek rg lk gh sl ml il gi hi">Read More</a>
+                <span class="vc ek rg lk gh sl ml il gi hi">Read More</span>
               </div>
             </div>
 
@@ -136,7 +136,7 @@
                 </div>
               </div>
               <h4 class="ek tj ml il kk wm xl eq lb">
-                <a href="blog-single.html">9 simple ways to improve your design skills</a>
+                <span>9 simple ways to improve your design skills</span>
               </h4>
             </div>
           </div>
@@ -147,7 +147,7 @@
               <img class="w-full" src="{{ asset('/asset/images/portada/blog-03.png') }}" alt="Blog" />
 
               <div class="im h r s df vd yc wg tc wf xf al hh/20 nl il z-10">
-                <a href="./blog-single.html" class="vc ek rg lk gh sl ml il gi hi">Read More</a>
+                <span class="vc ek rg lk gh sl ml il gi hi">Read More</span>
               </div>
             </div>
 
@@ -163,7 +163,7 @@
                 </div>
               </div>
               <h4 class="ek tj ml il kk wm xl eq lb">
-                <a href="blog-single.html">Tips to quickly improve your coding speed.</a>
+                <span>Tips to quickly improve your coding speed.</span>
               </h4>
             </div>
           </div>

@@ -17,7 +17,10 @@ class DailyMoodWidget extends Widget
     public ?Mood $today = null;
 
     protected static bool $isLazy = false;
-    protected int|string|array $columnSpan = 6;
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'xl' => 6,
+    ];
 
     public function mount(): void
     {

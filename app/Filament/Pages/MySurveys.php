@@ -11,12 +11,13 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Support\Facades\Auth;
 use Filament\Support\Enums\Width;
-
 use Filament\Support\Icons\Heroicon;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class MySurveys extends Page implements HasTable
 {
     use InteractsWithTable;
+    use HasPageShield;
 
     protected string $view = 'filament.pages.my-surveys';
 

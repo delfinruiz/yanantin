@@ -268,6 +268,13 @@
 
             <div class="sb">
                 {{ $slot }}
+
+                @if (request()->routeIs('filament.admin.auth.login'))
+                    <p class="sj hk xj rj ob mt-4 text-center">
+                        ¿No tienes una cuenta?
+                        <a class="mk" href="{{ route('signup') }}">Regístrate</a>
+                    </p>
+                @endif
             </div>
         </div>
     </section>

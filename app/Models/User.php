@@ -70,6 +70,24 @@ class User extends Authenticatable implements HasAvatar, WirechatUser, MustVerif
 
     protected static function booted(): void
     {
+        static::created(function (User $user) {
+            if (! $user->is_internal) {
+                try {
+                    $hasRoles = method_exists($user, 'getRoleNames') && $user->getRoleNames()->isNotEmpty();
+                } catch (\Throwable $e) {
+                    $hasRoles = false;
+                }
+                if (! $hasRoles) {
+                    try {
+                        $roleClass = \Spatie\Permission\Models\Role::class;
+                        $role = $roleClass::firstOrCreate(['name' => 'public']);
+                        $user->assignRole($role);
+                    } catch (\Throwable $e) {
+                        // ignore if permissions tables not migrated yet
+                    }
+                }
+            }
+        });
         static::saved(function (User $user) {
             $hasEmailAccount = $user->emailAccount()->exists();
             
@@ -165,6 +183,27 @@ class User extends Authenticatable implements HasAvatar, WirechatUser, MustVerif
 
     public function canAccessWirechatPanel(Panel $panel): bool
     {
+        return true;
+    }
+
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        $panelId = $panel->getId();
+
+        if ($panelId === 'public') {
+            // Solo usuarios con rol "public" pueden acceder al panel público
+            return $this->hasRole('public');
+        }
+
+        if ($panelId === 'admin') {
+            // Usuarios con rol "public" no pueden acceder al panel admin
+            if ($this->hasRole('public')) {
+                return false;
+            }
+
+            return true;
+        }
+
         return true;
     }
 

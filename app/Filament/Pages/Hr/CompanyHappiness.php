@@ -20,12 +20,14 @@ use Illuminate\Support\Facades\Auth;
 use pxlrbt\FilamentExcel\Actions\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use App\Filament\Widgets\AiSuggestionsPanel;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class CompanyHappiness extends Page implements Tables\Contracts\HasTable
 {
     use Tables\Concerns\InteractsWithTable {
         removeTableFilters as protected baseRemoveTableFilters;
     }
+    use HasPageShield;
 
     public int $filtersTick = 0;
 
@@ -284,13 +286,15 @@ class CompanyHappiness extends Page implements Tables\Contracts\HasTable
 
         if ($changed) {
             $ai = app(AiMessageService::class)->generateCompanySuggestions($stats);
-            HappinessSuggestion::create([
-                'date' => now()->toDateString(),
-                'requested_by' => Auth::id(),
-                'suggestion' => $ai['text'] ?? '',
-                'context' => $stats,
-                'model' => $ai['model'] ?? null,
-            ]);
+            HappinessSuggestion::updateOrCreate(
+                ['date' => now()->toDateString()],
+                [
+                    'requested_by' => Auth::id(),
+                    'suggestion' => $ai['text'] ?? '',
+                    'context' => $stats,
+                    'model' => $ai['model'] ?? null,
+                ]
+            );
         }
     }
     protected function labelForMood(?string $mood): string

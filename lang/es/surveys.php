@@ -25,6 +25,7 @@ return [
         'options' => 'Opciones',
         'distribution' => 'Distribución',
         'assign_all' => 'Asignar a todos los usuarios',
+        'assign_public_role' => 'Asignar al rol público',
         'departments' => 'Departamentos',
         'departments_helper' => 'Si activas “Asignar a todos”, este campo queda deshabilitado',
         'public_distribution' => 'Distribución Pública',
@@ -69,11 +70,13 @@ return [
         'active_updated' => 'Encuesta activa actualizada',
     ],
     'catalog' => [
-        'label' => 'Catálogo de dimensiones',
-        'modal_heading' => 'Catálogo de dimensiones',
+        'label' => 'Crear encuesta y dimensiones',
+        'modal_heading' => 'Crear encuesta y dimensiones',
         'manage_heading' => 'Gestión de dimensiones',
         'fields' => [
             'survey_name' => 'Nombre de la encuesta',
+            'select_survey' => 'Seleccionar encuesta existente...',
+            'new_survey' => 'O escribir nuevo nombre de encuesta...',
             'dimension' => 'Dimensión / Ítem',
             'target' => 'Meta (KPI)',
             'weight' => 'Peso',
@@ -96,6 +99,10 @@ return [
             'previous' => 'Anterior',
             'next' => 'Siguiente',
             'info' => 'Página :page / :max · 5 por página',
+        ],
+        'tooltips' => [
+            'cannot_edit_has_responses' => 'No se puede editar porque tiene respuestas',
+            'cannot_delete_has_responses' => 'No se puede borrar porque tiene respuestas',
         ],
         'validation' => [
             'error_title' => 'El nombre de la encuesta, la dimensión y la meta (KPI) son obligatorios',

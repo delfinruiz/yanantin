@@ -18,6 +18,11 @@ class CreateSurvey extends CreateRecord
 {
     protected static string $resource = SurveyResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Estructurar Encuesta';
+    }
+
     public function getMaxContentWidth(): Width
     {
         return Width::Full;
@@ -39,16 +44,28 @@ class CreateSurvey extends CreateRecord
             $record->ensurePublicToken();
         }
         $assignAll = $this->data['assign_all'] ?? false;
+        $assignPublicRole = $this->data['assign_public_role'] ?? false;
         $deptIds = $this->data['departments'] ?? $record->departments()->pluck('departments.id')->all();
 
+        $targetUserIds = collect();
+
         if ($assignAll) {
-            $userIds = User::pluck('id')->all();
-            $payload = collect($userIds)->mapWithKeys(fn ($id) => [$id => ['assigned_at' => now()]])->all();
-            $record->users()->syncWithoutDetaching($payload);
+            // Asignar a todos los internos (excluye rol public)
+            $targetUserIds = $targetUserIds->merge(User::where('is_internal', true)->pluck('id'));
         } elseif (!empty($deptIds)) {
-            $userIds = User::whereHas('departments', fn ($q) => $q->whereIn('departments.id', $deptIds))->pluck('id')->all();
+            $deptUserIds = User::whereHas('departments', fn ($q) => $q->whereIn('departments.id', $deptIds))->pluck('id');
             $record->departments()->sync($deptIds);
-            $payload = collect($userIds)->mapWithKeys(fn ($id) => [$id => ['assigned_at' => now()]])->all();
+            $targetUserIds = $targetUserIds->merge($deptUserIds);
+        }
+
+        if ($assignPublicRole) {
+            // Asignar usuarios con rol public
+            $publicUserIds = User::role('public')->pluck('id');
+            $targetUserIds = $targetUserIds->merge($publicUserIds);
+        }
+
+        if ($targetUserIds->isNotEmpty()) {
+            $payload = $targetUserIds->unique()->mapWithKeys(fn ($id) => [$id => ['assigned_at' => now()]])->all();
             $record->users()->syncWithoutDetaching($payload);
         }
 

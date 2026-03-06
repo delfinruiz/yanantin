@@ -6,7 +6,10 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class HacerStatsWidget extends PrincipalMarcadoresWidget
 {
-    protected int|string|array $columnSpan = 4;
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'xl' => 4,
+    ];
     protected static ?int $sort = 4;
 
     protected function getStats(): array
@@ -19,4 +22,3 @@ class HacerStatsWidget extends PrincipalMarcadoresWidget
         ];
     }
 }
-

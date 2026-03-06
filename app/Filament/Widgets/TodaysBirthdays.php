@@ -5,24 +5,20 @@ namespace App\Filament\Widgets;
 use App\Models\User;
 use Filament\Widgets\Widget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class TodaysBirthdays extends Widget
 {
     protected string $view = 'filament.widgets.todays-birthdays';
-    protected int|string|array $columnSpan = 4;
+    protected int|string|array $columnSpan = [
+        'sm' => 12,
+        'xl' => 4,
+    ];
     protected static ?int $sort = 5;
 
     public static function canView(): bool
     {
-        $today = now();
-
-        return User::query()
-            ->whereHas('emailAccount')
-            ->whereHas('employeeProfile', function (Builder $q) use ($today) {
-                $q->whereMonth('birth_date', $today->month)
-                    ->whereDay('birth_date', $today->day);
-            })
-            ->exists();
+        return Auth::check();
     }
 
     protected function getViewData(): array

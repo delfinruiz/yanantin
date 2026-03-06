@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Prism\Prism\Facades\Prism;
+use Illuminate\Support\Facades\Log;
 
 class AiProviderService
 {
@@ -15,6 +16,7 @@ class AiProviderService
     public function configureOpenAi(): void
     {
         $token = app(SettingService::class)->get('token_ai');
+        
         if ($token) {
             config(['prism.providers.openai.api_key' => $token]);
         }

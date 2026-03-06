@@ -9,9 +9,11 @@ use UnitEnum;
 use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Collection;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 class OrganizationalChart extends Page
 {
+    use HasPageShield;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-puzzle-piece';
     
     public static function getNavigationLabel(): string

@@ -12,4 +12,9 @@ class Dimension extends Model
         'kpi_target',
         'weight',
     ];
+
+    protected $casts = [
+        'kpi_target' => 'float',
+        'weight' => 'float',
+    ];
 }

@@ -71,15 +71,23 @@ class SurveyResource extends Resource
                         ->options(function () {
                             $names = \App\Models\Dimension::query()
                                 ->whereNotNull('survey_name')
-                                ->select('survey_name', DB::raw('MAX(created_at) as last'))
+                                ->select('survey_name', DB::raw('SUM(weight) as total_weight'))
                                 ->groupBy('survey_name')
-                                ->orderByDesc('last')
-                                ->pluck('survey_name', 'survey_name')
+                                ->orderBy('survey_name')
+                                ->get()
+                                ->mapWithKeys(function ($dim) {
+                                    $label = $dim->survey_name;
+                                    $weight = $dim->total_weight ?? 0;
+                                    if ($weight > 0) {
+                                        $label .= ' (Peso total: ' . number_format($weight, 0) . '%)';
+                                    }
+                                    return [$dim->survey_name => $label];
+                                })
                                 ->toArray();
                             return $names;
                         })
                         ->placeholder(__('surveys.fields.no_surveys_in_catalog'))
-                        ->disabled(fn () => \App\Models\Dimension::whereNotNull('survey_name')->count() === 0)
+                        ->disabled(fn (?Survey $record) => $record !== null)
                         ->columnSpan(2),
                     Forms\Components\Textarea::make('description')
                         ->label(__('surveys.fields.description'))
@@ -101,9 +109,12 @@ class SurveyResource extends Resource
                     ->hiddenLabel()
                     ->defaultItems(0)
                     ->collapsible()
-                    ->collapsed()
                     ->cloneable()
                     ->reorderable()
+                    ->live()
+                    ->afterStateUpdated(function ($livewire) {
+                        $livewire->save();
+                    })
                     ->extraAttributes([
                         'class' => 'relative',
                         'wire:loading.class' => 'opacity-50 pointer-events-none after:content-["' . __('surveys.fields.processing_order') . '"] after:absolute after:-top-5 after:left-0 after:text-xs after:text-gray-400 dark:after:text-gray-300'
@@ -136,12 +147,18 @@ class SurveyResource extends Resource
                             ->native(false)
                             ->searchable()
                             ->disabled(fn (\Filament\Schemas\Components\Utilities\Get $get) => empty($get('../../title') ?? $get('title')))
+                            ->afterStateUpdated(function ($state, $livewire) {
+                                $livewire->save();
+                            })
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('content')
                             ->label(__('surveys.fields.question'))
                             ->required()
                             ->reactive()
-                            ->live()
+                            ->live(debounce: 1000)
+                            ->afterStateUpdated(function ($state, $livewire) {
+                                $livewire->save();
+                            })
                             ->columnSpanFull(),
                         Forms\Components\Select::make('type')
                             ->label(__('surveys.fields.type'))
@@ -154,10 +171,18 @@ class SurveyResource extends Resource
                                 'scale_10' => __('surveys.types.scale_10'),
                                 'likert' => __('surveys.types.likert'),
                                 'multi' => __('surveys.types.multi'),
-                            ]),
+                            ])
+                            ->afterStateUpdated(function ($state, $livewire) {
+                                $livewire->save();
+                            }),
                         Forms\Components\Toggle::make('required')
                             ->label(__('surveys.fields.required'))
-                            ->default(false),
+                            ->default(false)
+                            ->inline(false)
+                            ->live()
+                            ->afterStateUpdated(function ($state, $livewire) {
+                                $livewire->save();
+                            }),
                         Forms\Components\KeyValue::make('options')
                             ->label(__('surveys.fields.options'))
                             ->columnSpanFull()
@@ -173,6 +198,10 @@ class SurveyResource extends Resource
                             ->visible(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                 $type = $get('type');
                                 return in_array($type, ['likert', 'multi']);
+                            })
+                            ->live(debounce: 1000)
+                            ->afterStateUpdated(function ($state, $livewire) {
+                                $livewire->save();
                             }),
                         Forms\Components\Hidden::make('order')
                             ->default(0),
@@ -180,39 +209,59 @@ class SurveyResource extends Resource
             ])->columnSpanFull(),
             Section::make(__('surveys.fields.distribution'))->schema([
                 Forms\Components\Hidden::make('public_token'),
-                Forms\Components\Toggle::make('assign_all')
-                    ->label(__('surveys.fields.assign_all'))
-                    ->inline(false)
-                    ->reactive()
-                    ->dehydrated(false)
-                    ->default(null),
-                Forms\Components\Select::make('departments')
-                    ->label(__('surveys.fields.departments'))
-                    ->relationship('departments', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->searchable()
-                    ->disabled(fn (\Filament\Schemas\Components\Utilities\Get $get) => (bool) $get('assign_all'))
-                    ->helperText(__('surveys.fields.departments_helper')),
-                Forms\Components\Toggle::make('public_enabled')
-                    ->label(__('surveys.fields.public_distribution'))
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get) {
-                        if ($state && !$get('public_token')) {
-                            $set('public_token', rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='));
-                        }
-                    })
-                    ->columnSpan(2)
-                    ->helperText(function (\Filament\Schemas\Components\Utilities\Get $get) {
-                        $enabled = (bool) $get('public_enabled');
-                        $token = (string) ($get('../../public_token') ?? $get('public_token'));
-                        if (! $enabled) return __('surveys.fields.public_distribution_helper');
-                        $base = url('/surveys/public');
-                        $link = $token ? $base . '/' . $token : $base;
-                        return $link;
-                    }),
-            ])->columns(2)->columnSpanFull(),
-        ]);
+                Grid::make(2)->schema([
+                    Section::make('Interna')
+                        ->label('Distribución Interna')
+                        ->schema([
+                            Forms\Components\Toggle::make('assign_all')
+                                ->label(__('surveys.fields.assign_all'))
+                                ->inline(false)
+                                ->reactive()
+                                ->dehydrated(false)
+                                ->default(null)
+                                ->columnSpanFull(),
+                            Forms\Components\Select::make('departments')
+                                ->label(__('surveys.fields.departments'))
+                                ->relationship('departments', 'name')
+                                ->multiple()
+                                ->preload()
+                                ->searchable()
+                                ->disabled(fn (\Filament\Schemas\Components\Utilities\Get $get) => (bool) $get('assign_all'))
+                                ->helperText(__('surveys.fields.departments_helper'))
+                                ->columnSpanFull(),
+                        ])->columnSpan(1),
+
+                    Section::make('Publica')
+                        ->label('Distribución Pública')
+                        ->schema([
+                            Forms\Components\Toggle::make('assign_public_role')
+                                ->label(__('surveys.fields.assign_public_role'))
+                                ->inline(false)
+                                ->reactive()
+                                ->dehydrated(false)
+                                ->default(null),
+                            Forms\Components\Toggle::make('public_enabled')
+                                ->label(__('surveys.fields.public_distribution'))
+                                ->inline(false)
+                                ->reactive()
+                                ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get) {
+                                    if ($state && !$get('public_token')) {
+                                        $set('public_token', rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='));
+                                    }
+                                })
+                                ->helperText(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                    $enabled = (bool) $get('public_enabled');
+                                    $token = (string) ($get('../../public_token') ?? $get('public_token'));
+                                    if (! $enabled) return __('surveys.fields.public_distribution_helper');
+                                    $base = url('/surveys/public');
+                                    $link = $token ? $base . '/' . $token : $base;
+                                    return $link;
+                                }),
+                        ])->columnSpan(1),
+                ]),
+            ])->columnSpanFull(),
+        ])
+        ->disabled(fn (?Survey $record) => $record && $record->questions()->whereHas('responses')->exists());
     }
 
     public static function table(Table $table): Table
@@ -221,11 +270,18 @@ class SurveyResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('title')->label(__('surveys.columns.title'))->searchable()->sortable(),
                 Tables\Columns\IconColumn::make('active')->label(__('surveys.columns.active'))->boolean()->alignCenter(),
-                Tables\Columns\TextColumn::make('deadline')->dateTime()->label(__('surveys.columns.deadline'))->sortable()->alignCenter(),
+                Tables\Columns\TextColumn::make('deadline')
+                    ->dateTime()
+                    ->label(__('surveys.columns.deadline'))
+                    ->placeholder(__('Sin Fecha límite'))
+                    ->sortable()
+                    ->alignCenter()
+                    ->color('gray'),
                 Tables\Columns\TextColumn::make('questions_count')
                     ->label(__('surveys.columns.questions'))
                     ->counts('questions')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->color('gray'),
                 Tables\Columns\TextColumn::make('responded_users')
                     ->label(__('surveys.columns.responded'))
                     ->getStateUsing(function (Survey $record) {
@@ -236,7 +292,8 @@ class SurveyResource extends Resource
                     })
                     ->sortable()
                     ->alignCenter()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->color('gray'),
                 Tables\Columns\ViewColumn::make('ai_indicator')
                     ->label(__('surveys.columns.ai_indicator'))
                     ->view('filament.tables.columns.ai-indicator')
@@ -270,13 +327,18 @@ class SurveyResource extends Resource
                     })
                     ->wrap()
                     ->alignCenter()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->color('gray'),
             ])
             ->filters([])
             ->recordActions([
                 ViewAction::make()->modalWidth('7xl'),
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->disabled(fn (Survey $record) => $record->questions()->whereHas('responses')->exists())
+                    ->tooltip(fn (Survey $record) => $record->questions()->whereHas('responses')->exists() ? __('No se puede editar porque tiene respuestas') : null),
+                DeleteAction::make()
+                    ->disabled(fn (Survey $record) => $record->questions()->whereHas('responses')->exists())
+                    ->tooltip(fn (Survey $record) => $record->questions()->whereHas('responses')->exists() ? __('No se puede borrar porque tiene respuestas') : null),
                 \Filament\Actions\ActionGroup::make([
                     \Filament\Actions\Action::make('ai_appreciation')
                         ->label(__('surveys.actions.view_ai'))

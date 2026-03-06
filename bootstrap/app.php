@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AllowWebDavMethods;
 use App\Http\Middleware\SetLocaleFromCookie;
+use App\Http\Middleware\EnsurePublicUser;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'locale' => SetLocaleFromCookie::class,
             'webdav' => AllowWebDavMethods::class,
+            'public.user' => EnsurePublicUser::class,
         ]);
 
         //compartir con la ruta web
