@@ -39,13 +39,15 @@ class CreateSurvey extends CreateRecord
     {
         /** @var Survey $record */
         $record = $this->record;
-        if ((bool) ($this->data['public_enabled'] ?? false)) {
+        $state = $this->form->getRawState();
+
+        if ((bool) ($state['public_enabled'] ?? false)) {
             $record->public_enabled = true;
             $record->ensurePublicToken();
         }
-        $assignAll = $this->data['assign_all'] ?? false;
-        $assignPublicRole = $this->data['assign_public_role'] ?? false;
-        $deptIds = $this->data['departments'] ?? $record->departments()->pluck('departments.id')->all();
+        $assignAll = (bool) ($state['assign_all'] ?? false);
+        $assignPublicRole = (bool) ($state['assign_public_role'] ?? false);
+        $deptIds = $state['departments'] ?? $record->departments()->pluck('departments.id')->all();
 
         $targetUserIds = collect();
 

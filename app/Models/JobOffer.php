@@ -38,6 +38,16 @@ class JobOffer extends Model
         'is_active',
     ];
 
+    public function jobApplications(): HasMany
+    {
+        return $this->hasMany(JobApplication::class);
+    }
+
+    public function interviews(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(JobInterview::class, JobApplication::class);
+    }
+
     protected $casts = [
         'published_at' => 'datetime',
         'deadline' => 'date',
@@ -56,11 +66,6 @@ class JobOffer extends Model
     public function jobOfferRequirements(): HasMany
     {
         return $this->hasMany(JobOfferRequirement::class);
-    }
-
-    public function jobApplications(): HasMany
-    {
-        return $this->hasMany(JobApplication::class);
     }
 
     public function changeRequests(): HasMany

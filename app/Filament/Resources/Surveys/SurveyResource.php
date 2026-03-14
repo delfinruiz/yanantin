@@ -19,7 +19,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Infolists\Components\TextEntry;
 use Illuminate\Support\Facades\Log;
@@ -94,13 +93,6 @@ class SurveyResource extends Resource
                         ->required()
                         ->autosize()
                         ->columnSpan(2),
-                    Forms\Components\Toggle::make('active')
-                        ->label(__('surveys.fields.active')),
-                    Forms\Components\Toggle::make('is_public')
-                        ->label(__('surveys.fields.is_public'))
-                        ->helperText(__('surveys.fields.is_public_helper')),
-                    Forms\Components\DateTimePicker::make('deadline')
-                        ->label(__('surveys.fields.deadline')),
                 ]),
             ])->columnSpanFull(),
             Section::make(__('surveys.fields.questions_builder'))->schema([
@@ -113,7 +105,9 @@ class SurveyResource extends Resource
                     ->reorderable()
                     ->live()
                     ->afterStateUpdated(function ($livewire) {
-                        $livewire->save();
+                        if (method_exists($livewire, 'silentSave')) {
+                            $livewire->silentSave();
+                        }
                     })
                     ->extraAttributes([
                         'class' => 'relative',
@@ -148,7 +142,9 @@ class SurveyResource extends Resource
                             ->searchable()
                             ->disabled(fn (\Filament\Schemas\Components\Utilities\Get $get) => empty($get('../../title') ?? $get('title')))
                             ->afterStateUpdated(function ($state, $livewire) {
-                                $livewire->save();
+                                if (method_exists($livewire, 'silentSave')) {
+                                    $livewire->silentSave();
+                                }
                             })
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('content')
@@ -157,7 +153,9 @@ class SurveyResource extends Resource
                             ->reactive()
                             ->live(debounce: 1000)
                             ->afterStateUpdated(function ($state, $livewire) {
-                                $livewire->save();
+                                if (method_exists($livewire, 'silentSave')) {
+                                    $livewire->silentSave();
+                                }
                             })
                             ->columnSpanFull(),
                         Forms\Components\Select::make('type')
@@ -173,7 +171,9 @@ class SurveyResource extends Resource
                                 'multi' => __('surveys.types.multi'),
                             ])
                             ->afterStateUpdated(function ($state, $livewire) {
-                                $livewire->save();
+                                if (method_exists($livewire, 'silentSave')) {
+                                    $livewire->silentSave();
+                                }
                             }),
                         Forms\Components\Toggle::make('required')
                             ->label(__('surveys.fields.required'))
@@ -181,7 +181,9 @@ class SurveyResource extends Resource
                             ->inline(false)
                             ->live()
                             ->afterStateUpdated(function ($state, $livewire) {
-                                $livewire->save();
+                                if (method_exists($livewire, 'silentSave')) {
+                                    $livewire->silentSave();
+                                }
                             }),
                         Forms\Components\KeyValue::make('options')
                             ->label(__('surveys.fields.options'))
@@ -201,13 +203,17 @@ class SurveyResource extends Resource
                             })
                             ->live(debounce: 1000)
                             ->afterStateUpdated(function ($state, $livewire) {
-                                $livewire->save();
+                                if (method_exists($livewire, 'silentSave')) {
+                                    $livewire->silentSave();
+                                }
                             }),
                         Forms\Components\Hidden::make('order')
                             ->default(0),
                     ]),
             ])->columnSpanFull(),
-            Section::make(__('surveys.fields.distribution'))->schema([
+            Section::make(__('surveys.fields.distribution'))
+                ->hidden(fn (\Filament\Schemas\Components\Utilities\Get $get) => (bool) $get('is_interview'))
+                ->schema([
                 Forms\Components\Hidden::make('public_token'),
                 Grid::make(2)->schema([
                     Section::make('Interna')
@@ -218,7 +224,15 @@ class SurveyResource extends Resource
                                 ->inline(false)
                                 ->reactive()
                                 ->dehydrated(false)
-                                ->default(null)
+                                ->afterStateHydrated(function (\Filament\Schemas\Components\Utilities\Set $set, ?Survey $record) {
+                                    $set('assign_all', (bool) ($record?->assign_all ?? false));
+                                })
+                                ->afterStateUpdated(function ($state, \Filament\Schemas\Components\Utilities\Set $set) {
+                                    if ($state) {
+                                        $set('departments', []);
+                                    }
+                                })
+                                ->default(false)
                                 ->columnSpanFull(),
                             Forms\Components\Select::make('departments')
                                 ->label(__('surveys.fields.departments'))
@@ -239,7 +253,7 @@ class SurveyResource extends Resource
                                 ->inline(false)
                                 ->reactive()
                                 ->dehydrated(false)
-                                ->default(null),
+                                ->default(false),
                             Forms\Components\Toggle::make('public_enabled')
                                 ->label(__('surveys.fields.public_distribution'))
                                 ->inline(false)
@@ -260,8 +274,81 @@ class SurveyResource extends Resource
                         ])->columnSpan(1),
                 ]),
             ])->columnSpanFull(),
+            Section::make('Publicación')
+                ->description('Recomendación: estructura las preguntas, configura la distribución y luego publica. Si la encuesta está publicada, los cambios en preguntas solo se guardan al presionar “Guardar cambios”.')
+                ->schema([
+                    Grid::make(2)->schema([
+                        Forms\Components\Toggle::make('active')
+                            ->label('Publicar (Activa)')
+                            ->helperText(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                return (bool) $get('is_interview')
+                                    ? 'Activa la encuesta como plantilla para entrevistas. No usa distribución ni notifica usuarios desde este módulo.'
+                                    : 'Al publicar, se notifica a los usuarios asignados cuando guardas.';
+                            })
+                            ->reactive()
+                            ->afterStateUpdated(function (
+                                $state,
+                                \Filament\Schemas\Components\Utilities\Set $set,
+                                \Filament\Schemas\Components\Utilities\Get $get,
+                                ?Survey $record
+                            ) {
+                                if (! $state) {
+                                    $set('confirm_publish', false);
+                                    return;
+                                }
+
+                                if ((bool) $get('is_interview')) {
+                                    return;
+                                }
+
+                                $hasExistingDistribution = $record
+                                    ? ($record->users()->exists() || $record->departments()->exists() || (bool) $record->public_enabled)
+                                    : false;
+
+                                $hasSelectedDistribution = (bool) ($get('assign_all') ?? false)
+                                    || (bool) ($get('assign_public_role') ?? false)
+                                    || (bool) ($get('public_enabled') ?? false)
+                                    || ! empty($get('departments') ?? []);
+
+                                if (! $hasExistingDistribution && ! $hasSelectedDistribution) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Antes de publicar, configura la distribución')
+                                        ->body('Selecciona “Asignar a todos”, departamentos y/o distribución pública.')
+                                        ->warning()
+                                        ->send();
+
+                                    $set('active', false);
+                                }
+                            }),
+                        Forms\Components\Checkbox::make('confirm_publish')
+                            ->label('Confirmo que deseo notificar a los usuarios al publicar')
+                            ->dehydrated(false)
+                            ->accepted()
+                            ->required(function (\Filament\Schemas\Components\Utilities\Get $get, ?Survey $record): bool {
+                                return (bool) $get('active')
+                                    && ! ((bool) ($record?->active ?? false))
+                                    && ! ((bool) $get('is_interview'));
+                            })
+                            ->visible(function (\Filament\Schemas\Components\Utilities\Get $get, ?Survey $record): bool {
+                                return (bool) $get('active')
+                                    && ! ((bool) ($record?->active ?? false))
+                                    && ! ((bool) $get('is_interview'));
+                            })
+                            ->columnSpanFull(),
+                        Forms\Components\Toggle::make('is_public')
+                            ->label(__('surveys.fields.is_public'))
+                            ->helperText(__('surveys.fields.is_public_helper')),
+                        Forms\Components\Toggle::make('is_interview')
+                            ->label('Es una Entrevista')
+                            ->helperText('Marcar si esta encuesta se utilizará como plantilla para entrevistas de candidatos.'),
+                        Forms\Components\DateTimePicker::make('deadline')
+                            ->label(__('surveys.fields.deadline'))
+                            ->columnSpanFull(),
+                    ]),
+                ])
+                ->columnSpanFull(),
         ])
-        ->disabled(fn (?Survey $record) => $record && $record->questions()->whereHas('responses')->exists());
+        ->disabled(fn (?Survey $record) => $record && ! $record->is_interview && $record->questions()->whereHas('responses')->exists());
     }
 
     public static function table(Table $table): Table
@@ -269,6 +356,14 @@ class SurveyResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('title')->label(__('surveys.columns.title'))->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('kind')
+                    ->label('Tipo')
+                    ->getStateUsing(fn (Survey $record) => $record->is_interview ? 'Plantilla Entrevista' : 'Encuesta')
+                    ->badge()
+                    ->color(fn (Survey $record) => $record->is_interview ? 'warning' : 'success')
+                    ->sortable()
+                    ->alignCenter()
+                    ->toggleable(),
                 Tables\Columns\IconColumn::make('active')->label(__('surveys.columns.active'))->boolean()->alignCenter(),
                 Tables\Columns\TextColumn::make('deadline')
                     ->dateTime()
@@ -285,9 +380,25 @@ class SurveyResource extends Resource
                 Tables\Columns\TextColumn::make('responded_users')
                     ->label(__('surveys.columns.responded'))
                     ->getStateUsing(function (Survey $record) {
+                        if ($record->is_interview) {
+                            return 0;
+                        }
                         $qIds = $record->questions()->pluck('id');
-                        $userCount = Response::whereIn('question_id', $qIds)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
-                        $guestCount = Response::whereIn('question_id', $qIds)->whereNull('user_id')->distinct('guest_email')->count('guest_email');
+                        $userCount = Response::query()->whereIn('question_id', $qIds)
+                            ->withoutInterview()
+                            ->whereNotNull('user_id')
+                            ->whereNotNull('value')
+                            ->where('value', '!=', 'Sin Respuesta')
+                            ->distinct('user_id')
+                            ->count('user_id');
+                        $guestCount = Response::query()->whereIn('question_id', $qIds)
+                            ->withoutInterview()
+                            ->whereNull('user_id')
+                            ->whereNotNull('guest_email')
+                            ->whereNotNull('value')
+                            ->where('value', '!=', 'Sin Respuesta')
+                            ->distinct('guest_email')
+                            ->count('guest_email');
                         return $userCount + $guestCount;
                     })
                     ->sortable()
@@ -306,7 +417,7 @@ class SurveyResource extends Resource
                             ->modalContent(fn (Survey $record) => view('filament.pages.ai-appreciation-modal', ['content' => $record->aiAppreciation?->content ?? '']))
                             ->modalHeading(__('surveys.actions.view_ai_modal_heading'))
                             ->modalSubmitAction(false)
-                            ->visible(fn (Survey $record) => (bool) $record->aiAppreciation)
+                            ->visible(fn (Survey $record) => (bool) $record->aiAppreciation && ! $record->is_interview)
                     ),
                 Tables\Columns\TextColumn::make('distribution')
                     ->label(__('surveys.columns.distribution'))
@@ -318,8 +429,8 @@ class SurveyResource extends Resource
                         if (!empty($depts)) {
                             return implode(', ', $depts);
                         }
-                        $totalUsers = User::count();
-                        $assigned = $record->users()->count();
+                        $totalUsers = User::query()->where('is_internal', true)->count();
+                        $assigned = $record->users()->where('is_internal', true)->count();
                         if ($totalUsers > 0 && $assigned >= $totalUsers) {
                             return __('surveys.columns.all');
                         }
@@ -333,19 +444,59 @@ class SurveyResource extends Resource
             ->filters([])
             ->recordActions([
                 ViewAction::make()->modalWidth('7xl'),
-                EditAction::make()
-                    ->disabled(fn (Survey $record) => $record->questions()->whereHas('responses')->exists())
-                    ->tooltip(fn (Survey $record) => $record->questions()->whereHas('responses')->exists() ? __('No se puede editar porque tiene respuestas') : null),
+                \Filament\Actions\Action::make('edit_survey')
+                    ->label('Editar')
+                    ->icon('heroicon-o-pencil-square')
+                    ->disabled(fn (Survey $record) => ! $record->is_interview && $record->questions()->whereHas('responses')->exists())
+                    ->tooltip(fn (Survey $record) => (! $record->is_interview && $record->questions()->whereHas('responses')->exists()) ? __('No se puede editar porque tiene respuestas') : null)
+                    ->action(function (Survey $record) {
+                        $totalWeight = (float) \App\Models\Dimension::query()
+                            ->where('survey_name', $record->title)
+                            ->sum('weight');
+
+                        $rounded = round($totalWeight, 2);
+
+                        if (abs($rounded - 100.0) > 0.001) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No se puede editar la encuesta')
+                                ->body('La sumatoria de pesos de dimensiones es ' . $rounded . '%. Debe ser 100% para editar.')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        return redirect(static::getUrl('edit', ['record' => $record]));
+                    }),
                 DeleteAction::make()
-                    ->disabled(fn (Survey $record) => $record->questions()->whereHas('responses')->exists())
-                    ->tooltip(fn (Survey $record) => $record->questions()->whereHas('responses')->exists() ? __('No se puede borrar porque tiene respuestas') : null),
+                    ->disabled(function (Survey $record): bool {
+                        if ($record->is_interview) {
+                            return \App\Models\JobInterview::where('survey_id', $record->id)->exists();
+                        }
+
+                        return $record->questions()->whereHas('responses')->exists();
+                    })
+                    ->tooltip(function (Survey $record): ?string {
+                        if ($record->is_interview) {
+                            return \App\Models\JobInterview::where('survey_id', $record->id)->exists()
+                                ? 'No se puede borrar porque ya fue utilizada en entrevistas.'
+                                : null;
+                        }
+
+                        return $record->questions()->whereHas('responses')->exists()
+                            ? __('No se puede borrar porque tiene respuestas')
+                            : null;
+                    }),
                 \Filament\Actions\ActionGroup::make([
                     \Filament\Actions\Action::make('ai_appreciation')
                         ->label(__('surveys.actions.view_ai'))
                         ->icon('heroicon-o-cpu-chip')
                         ->visible(function (Survey $record) {
+                            if ($record->is_interview) {
+                                return false;
+                            }
                             $qIds = $record->questions()->pluck('id');
-                            $has = \App\Models\Response::whereIn('question_id', $qIds)->exists();
+                            $has = \App\Models\Response::query()->whereIn('question_id', $qIds)->withoutInterview()->exists();
                             return $has && ! $record->aiAppreciation;
                         })
                         ->action(function (Survey $record) {
@@ -382,7 +533,7 @@ class SurveyResource extends Resource
                     \Filament\Actions\Action::make('view_ai')
                         ->label(__('surveys.actions.view_ai'))
                         ->icon('heroicon-o-cpu-chip')
-                        ->visible(fn (Survey $record) => (bool) $record->aiAppreciation)
+                        ->visible(fn (Survey $record) => (bool) $record->aiAppreciation && ! $record->is_interview)
                         ->action(function () {
                             \Filament\Notifications\Notification::make()
                                 ->title('Apreciación IA Generada')
@@ -392,9 +543,10 @@ class SurveyResource extends Resource
                     \Filament\Actions\Action::make('report_pdf')
                         ->label(__('surveys.actions.report_pdf'))
                         ->icon('heroicon-o-document-arrow-down')
+                        ->visible(fn (Survey $record) => ! $record->is_interview)
                         ->action(function (Survey $record) {
                             $qIds = $record->questions()->pluck('id');
-                            $has = \App\Models\Response::whereIn('question_id', $qIds)->exists();
+                            $has = \App\Models\Response::query()->whereIn('question_id', $qIds)->withoutInterview()->exists();
                             if (! $has) {
                                 \Filament\Notifications\Notification::make()
                                     ->title(__('surveys.notifications.no_responses'))
@@ -407,9 +559,10 @@ class SurveyResource extends Resource
                     \Filament\Actions\Action::make('export_responses')
                         ->label(__('surveys.actions.export_responses'))
                         ->icon('heroicon-o-table-cells')
+                        ->visible(fn (Survey $record) => ! $record->is_interview)
                         ->action(function (Survey $record) {
                             $qIds = $record->questions()->pluck('id');
-                            $has = \App\Models\Response::whereIn('question_id', $qIds)->exists();
+                            $has = \App\Models\Response::query()->whereIn('question_id', $qIds)->withoutInterview()->exists();
                             if (! $has) {
                                 \Filament\Notifications\Notification::make()
                                     ->title(__('surveys.notifications.no_responses'))
@@ -424,9 +577,11 @@ class SurveyResource extends Resource
                         ->requiresConfirmation()
                         ->color('danger')
                         ->icon('heroicon-o-trash')
+                        ->visible(fn (Survey $record) => ! $record->is_interview)
                         ->action(function (Survey $record) {
                             $qIds = $record->questions()->pluck('id');
-                            \App\Models\Response::whereIn('question_id', $qIds)->delete();
+                            \App\Models\Response::query()->whereIn('question_id', $qIds)->withoutInterview()->delete();
+                            $record->forceFill(['active' => false])->save();
                         }),
                 ])->label(__('surveys.actions.operations')),
             ]);

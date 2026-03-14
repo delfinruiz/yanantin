@@ -51,6 +51,7 @@ class MySurveys extends Page implements HasTable
         if (! $userId) return null;
         $count = Survey::query()
             ->where('active', true)
+            ->where('is_interview', false)
             ->where(function ($q) {
                 $q->whereNull('deadline')
                   ->orWhere('deadline', '>=', now());
@@ -79,6 +80,7 @@ class MySurveys extends Page implements HasTable
             ->query(
                 Survey::query()
                     ->where('active', true)
+                    ->where('is_interview', false)
                     ->where(function ($q) {
                         $q->whereNull('deadline')
                           ->orWhere('deadline', '>=', now());

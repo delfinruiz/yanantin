@@ -52,7 +52,10 @@ class ListGroups extends ListRecords
                     // Add Participants logic
                     if (($data['type'] ?? null) === \Wirechat\Wirechat\Enums\GroupType::PUBLIC->value) {
                          // Public Group: Add ALL users except owner
-                         $allUsers = User::where('id', '!=', $ownerUser?->getKey())->get();
+                         $allUsers = User::query()
+                             ->where('id', '!=', $ownerUser?->getKey())
+                             ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'public'))
+                             ->get();
                          foreach ($allUsers as $participant) {
                              $conversation->addParticipant($participant, \Wirechat\Wirechat\Enums\ParticipantRole::PARTICIPANT);
                          }

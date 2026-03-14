@@ -807,6 +807,16 @@ class PublicCandidateDashboard extends Page implements HasTable, HasInfolists, H
                         'user' => $user,
                         'profile' => $profile,
                     ]);
+                    $pdf->setPaper('a4', 'portrait');
+                    $pdf->setOption('dpi', 96);
+                    $pdf->setOption('defaultFont', 'DejaVu Sans');
+                    $pdf->setOption('isHtml5ParserEnabled', true);
+                    $pdf->setOption('isRemoteEnabled', true);
+                    $pdf->setOption('isPhpEnabled', false);
+                    $pdf->setOption('margin_top', 10);
+                    $pdf->setOption('margin_right', 10);
+                    $pdf->setOption('margin_bottom', 12);
+                    $pdf->setOption('margin_left', 10);
 
                     return response()->streamDownload(function () use ($pdf) {
                         echo $pdf->output();

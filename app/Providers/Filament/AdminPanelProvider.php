@@ -46,7 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             //->sidebarWidth('300px')
             ->default()
-            ->brandName($settings?->company_name ?? 'Finanzas Personales')
+            ->brandName($settings?->company_name ?? 'Yanantin')
             ->favicon($settings?->favicon ? Storage::url($settings->favicon) : asset('/asset/images/favicon.ico'))
             ->brandLogo($settings?->logo_light ? Storage::url($settings->logo_light) : asset('/asset/images/logo-light.png'))
             ->darkModeBrandLogo($settings?->logo_dark ? Storage::url($settings->logo_dark) : asset('/asset/images/logo-dark.png'))

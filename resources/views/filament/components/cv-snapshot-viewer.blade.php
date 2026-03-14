@@ -1,60 +1,70 @@
 @php
-    $profile = (object) $getRecord()->cv_snapshot;
+    $record = $getRecord();
+    $profile = (object) ((array) ($record->cv_snapshot ?? []));
+
     $user = (object) [
-        'name' => $getRecord()->applicant_name ?? 'Candidato',
-        'email' => $getRecord()->applicant_email ?? '',
-        'avatar_url' => null, // Opcional: podrías intentar buscar al usuario si user_id existe
+        'name' => $record->applicant_name ?? 'Candidato',
+        'email' => $record->applicant_email ?? '',
+        'avatar_url' => null,
     ];
-    // Si hay un usuario vinculado, intentamos obtener su avatar real
-    if ($getRecord()->user_id) {
-        $realUser = \App\Models\User::find($getRecord()->user_id);
+
+    if ($record->user_id) {
+        $realUser = \App\Models\User::find($record->user_id);
         if ($realUser) {
             $user = $realUser;
         }
     }
+
+    $avatarUrl = null;
+    if (is_object($user)) {
+        $avatarUrl = \Filament\Facades\Filament::getUserAvatarUrl($user) ?: null;
+    }
+
+    $initials = '';
+    $nameParts = preg_split('/\s+/', trim((string) ($user->name ?? '')));
+    if (is_array($nameParts) && count($nameParts)) {
+        $initials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
+    }
 @endphp
 
 <div class="w-full bg-white dark:bg-gray-900 shadow-sm rounded-xl overflow-hidden font-sans text-sm border border-gray-200 dark:border-gray-700">
-    <!-- Header tipo Curriculum -->
     <div class="bg-gray-50 dark:bg-gray-800 p-8 border-b border-gray-200 dark:border-gray-700">
         <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <!-- Avatar / Iniciales -->
             <div class="flex-shrink-0">
-                @if(isset($user->avatar_url) && $user->avatar_url)
-                    <img src="{{ Filament\Facades\Filament::getUserAvatarUrl($user) }}" alt="{{ $user->name }}" class="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md">
+                @if($avatarUrl)
+                    <img src="{{ $avatarUrl }}" alt="{{ $user->name }}" class="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-md">
                 @else
                     <div class="w-24 h-24 rounded-full bg-primary-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-white dark:border-gray-700 shadow-md">
-                        {{ strtoupper(substr($user->name, 0, 1) . (str_contains($user->name, ' ') ? substr(explode(' ', $user->name)[1], 0, 1) : '')) }}
+                        {{ $initials }}
                     </div>
                 @endif
             </div>
 
-            <!-- Info Principal -->
             <div class="text-center md:text-left flex-grow">
                 <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">{{ $user->name }}</h1>
-                
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-gray-600 dark:text-gray-400 mb-4 text-sm">
                     <div class="flex items-center gap-2">
-                        <x-heroicon-m-envelope class="w-4 h-4 text-primary-500 flex-shrink-0" /> 
+                        <x-heroicon-m-envelope class="w-4 h-4 text-primary-500 flex-shrink-0" />
                         <span class="truncate">{{ $user->email }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <x-heroicon-m-phone class="w-4 h-4 text-primary-500 flex-shrink-0" /> 
+                        <x-heroicon-m-phone class="w-4 h-4 text-primary-500 flex-shrink-0" />
                         <span>{{ $profile->phone ?? '' }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <x-heroicon-m-map-pin class="w-4 h-4 text-primary-500 flex-shrink-0" /> 
-                        <span>{{ $profile->city ?? '' }}, {{ $profile->country ?? '' }}</span>
+                        <x-heroicon-m-map-pin class="w-4 h-4 text-primary-500 flex-shrink-0" />
+                        <span>{{ $profile->city ?? '' }}@if(($profile->country ?? null)), {{ $profile->country }}@endif</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <x-heroicon-m-identification class="w-4 h-4 text-primary-500 flex-shrink-0" /> 
+                        <x-heroicon-m-identification class="w-4 h-4 text-primary-500 flex-shrink-0" />
                         <span>{{ $profile->rut ?? '' }}</span>
                     </div>
                     @if(isset($profile->birth_date) && $profile->birth_date)
-                    <div class="flex items-center gap-2">
-                        <x-heroicon-m-calendar class="w-4 h-4 text-primary-500 flex-shrink-0" /> 
-                        <span>{{ \Carbon\Carbon::parse($profile->birth_date)->age }} años</span>
-                    </div>
+                        <div class="flex items-center gap-2">
+                            <x-heroicon-m-calendar class="w-4 h-4 text-primary-500 flex-shrink-0" />
+                            <span>{{ \Carbon\Carbon::parse($profile->birth_date)->age }} años</span>
+                        </div>
                     @endif
                 </div>
 
@@ -72,11 +82,10 @@
                 </div>
             </div>
 
-            <!-- Resumen Profesional (Salario/Disponibilidad) -->
             <div class="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm min-w-[200px] text-center md:text-right">
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Aspiración Salarial</p>
                 <p class="font-bold text-gray-900 dark:text-white text-lg mb-3">{{ $profile->currency ?? '' }} ${{ number_format((float)($profile->salary_expectation ?? 0), 0, ',', '.') }}</p>
-                
+
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Disponibilidad</p>
                 <div class="mb-3">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium {{ ($profile->immediate_availability ?? false) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
@@ -98,168 +107,151 @@
         </div>
     </div>
 
-    <!-- Contenido en 2 columnas -->
     <div class="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- Columna Principal (Educación y Experiencia) -->
         <div class="lg:col-span-8 space-y-8">
-            
-            <!-- Educación -->
             @if(isset($profile->education) && $profile->education)
-            <section>
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <div class="p-1.5 bg-primary-100 text-primary-600 rounded-md">
-                        <x-heroicon-m-academic-cap class="w-5 h-5" />
-                    </div>
-                    Formación Académica
-                </h3>
-                <div class="grid gap-4">
-                    @foreach($profile->education as $edu)
-                        <div class="flex items-start gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
-                            <div class="flex-grow">
-                                <h4 class="font-bold text-gray-900 dark:text-white">{{ $edu['title'] ?? '' }}</h4>
-                                <p class="text-primary-600 dark:text-primary-400">{{ $edu['institution'] ?? '' }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ isset($edu['start_date']) ? \Carbon\Carbon::parse($edu['start_date'])->format('Y') : '' }} 
-                                    - 
-                                    {{ isset($edu['end_date']) ? \Carbon\Carbon::parse($edu['end_date'])->format('Y') : 'Actualidad' }}
-                                </p>
-                            </div>
-                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                {{ $edu['status'] ?? '' }}
-                            </span>
+                <section>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                        <div class="p-1.5 bg-primary-100 text-primary-600 rounded-md">
+                            <x-heroicon-m-academic-cap class="w-5 h-5" />
                         </div>
-                    @endforeach
-                </div>
-            </section>
+                        Formación Académica
+                    </h3>
+                    <div class="grid gap-4">
+                        @foreach($profile->education as $edu)
+                            <div class="flex items-start gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
+                                <div class="flex-grow">
+                                    <h4 class="font-bold text-gray-900 dark:text-white">{{ $edu['title'] ?? '' }}</h4>
+                                    <p class="text-primary-600 dark:text-primary-400">{{ $edu['institution'] ?? '' }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {{ isset($edu['start_date']) ? \Carbon\Carbon::parse($edu['start_date'])->format('Y') : '' }}
+                                        -
+                                        {{ isset($edu['end_date']) ? \Carbon\Carbon::parse($edu['end_date'])->format('Y') : 'Actualidad' }}
+                                    </p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                    {{ $edu['status'] ?? '' }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
             @endif
 
-            <!-- Experiencia Laboral -->
             @if(isset($profile->work_experience) && $profile->work_experience)
-            <section>
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                    <div class="p-1.5 bg-primary-100 text-primary-600 rounded-md">
-                        <x-heroicon-m-briefcase class="w-5 h-5" />
+                <section>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                        <div class="p-1.5 bg-primary-100 text-primary-600 rounded-md">
+                            <x-heroicon-m-briefcase class="w-5 h-5" />
+                        </div>
+                        Experiencia Laboral
+                    </h3>
+                    <div class="relative pl-3 space-y-8 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200 dark:before:bg-gray-700">
+                        @foreach($profile->work_experience as $work)
+                            <div class="relative pl-6">
+                                <div class="absolute left-[-5px] top-1.5 w-3 h-3 rounded-full bg-primary-500 ring-4 ring-white dark:ring-gray-900"></div>
+                                <div class="mb-1">
+                                    <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ $work['position'] ?? '' }}</h4>
+                                    <div class="flex flex-wrap items-center gap-x-2 text-primary-600 dark:text-primary-400 font-medium">
+                                        <span>{{ $work['company'] ?? '' }}</span>
+                                        <span class="text-gray-300">•</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                                            {{ isset($work['start_date']) ? \Carbon\Carbon::parse($work['start_date'])->format('M Y') : '' }}
+                                            -
+                                            {{ isset($work['end_date']) ? \Carbon\Carbon::parse($work['end_date'])->format('M Y') : 'Actualidad' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                @if(isset($work['functions']))
+                                    <div class="text-gray-600 dark:text-gray-300 mt-2 text-sm leading-relaxed">
+                                        <p class="whitespace-pre-line">{{ $work['functions'] }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
                     </div>
-                    Experiencia Laboral
-                </h3>
-                <div class="relative pl-3 space-y-8 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200 dark:before:bg-gray-700">
-                    @foreach($profile->work_experience as $work)
-                        <div class="relative pl-6">
-                            <!-- Dot -->
-                            <div class="absolute left-[-5px] top-1.5 w-3 h-3 rounded-full bg-primary-500 ring-4 ring-white dark:ring-gray-900"></div>
-                            
-                            <div class="mb-1">
-                                <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ $work['position'] ?? '' }}</h4>
-                                <div class="flex flex-wrap items-center gap-x-2 text-primary-600 dark:text-primary-400 font-medium">
-                                    <span>{{ $work['company'] ?? '' }}</span>
-                                    <span class="text-gray-300">•</span>
-                                    <span class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ isset($work['start_date']) ? \Carbon\Carbon::parse($work['start_date'])->format('M Y') : '' }} 
-                                        - 
-                                        {{ isset($work['end_date']) ? \Carbon\Carbon::parse($work['end_date'])->format('M Y') : 'Actualidad' }}
-                                    </span>
+                </section>
+            @endif
+
+            @if(isset($profile->references) && $profile->references)
+                <section>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                        <div class="p-1.5 bg-primary-100 text-primary-600 rounded-md">
+                            <x-heroicon-m-users class="w-5 h-5" />
+                        </div>
+                        Referencias Laborales
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach($profile->references as $ref)
+                            <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
+                                <h4 class="font-bold text-gray-900 dark:text-white">{{ $ref['name'] ?? '' }}</h4>
+                                <p class="text-sm text-primary-600 dark:text-primary-400 font-medium">{{ $ref['company'] ?? '' }}</p>
+                                <div class="mt-2 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <div class="flex items-center gap-1.5">
+                                        <x-heroicon-m-phone class="w-3 h-3" />
+                                        <span>{{ $ref['phone'] ?? '' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <x-heroicon-m-envelope class="w-3 h-3" />
+                                        <span>{{ $ref['email'] ?? '' }}</span>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            @if(isset($work['functions']))
-                            <div class="text-gray-600 dark:text-gray-300 mt-2 text-sm leading-relaxed">
-                                <p class="whitespace-pre-line">{{ $work['functions'] }}</p>
-                            </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </section>
+                        @endforeach
+                    </div>
+                </section>
             @endif
-
-             <!-- Referencias Laborales -->
-             @if(isset($profile->references) && $profile->references)
-             <section>
-                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                     <div class="p-1.5 bg-primary-100 text-primary-600 rounded-md">
-                         <x-heroicon-m-users class="w-5 h-5" />
-                     </div>
-                     Referencias Laborales
-                 </h3>
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     @foreach($profile->references as $ref)
-                         <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
-                             <h4 class="font-bold text-gray-900 dark:text-white">{{ $ref['name'] ?? '' }}</h4>
-                             <p class="text-sm text-primary-600 dark:text-primary-400 font-medium">{{ $ref['company'] ?? '' }}</p>
-                             <div class="mt-2 space-y-1 text-xs text-gray-500 dark:text-gray-400">
-                                 <div class="flex items-center gap-1.5">
-                                     <x-heroicon-m-phone class="w-3 h-3" />
-                                     <span>{{ $ref['phone'] ?? '' }}</span>
-                                 </div>
-                                 <div class="flex items-center gap-1.5">
-                                     <x-heroicon-m-envelope class="w-3 h-3" />
-                                     <span>{{ $ref['email'] ?? '' }}</span>
-                                 </div>
-                             </div>
-                         </div>
-                     @endforeach
-                 </div>
-             </section>
-             @endif
-
         </div>
 
-        <!-- Columna Lateral (Skills) -->
         <div class="lg:col-span-4 space-y-8">
-            
-            <!-- Idiomas -->
             @if(isset($profile->languages) && $profile->languages)
-            <section>
-                <h3 class="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-wider border-b border-gray-200 dark:border-gray-700 pb-1">
-                    Idiomas
-                </h3>
-                <ul class="space-y-3">
-                    @foreach($profile->languages as $lang)
-                        <li class="flex justify-between items-center">
-                            <span class="text-gray-700 dark:text-gray-300 font-medium">{{ $lang['language'] ?? '' }}</span>
-                            <span class="text-xs text-primary-600 dark:text-primary-400 font-semibold bg-primary-50 dark:bg-primary-900/20 px-2 py-0.5 rounded">
-                                {{ $lang['level'] ?? '' }}
-                            </span>
-                        </li>
-                    @endforeach
-                </ul>
-            </section>
+                <section>
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-wider border-b border-gray-200 dark:border-gray-700 pb-1">
+                        Idiomas
+                    </h3>
+                    <ul class="space-y-3">
+                        @foreach($profile->languages as $lang)
+                            <li class="flex justify-between items-center">
+                                <span class="text-gray-700 dark:text-gray-300 font-medium">{{ $lang['language'] ?? '' }}</span>
+                                <span class="text-xs text-primary-600 dark:text-primary-400 font-semibold bg-primary-50 dark:bg-primary-900/20 px-2 py-0.5 rounded">
+                                    {{ $lang['level'] ?? '' }}
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
             @endif
 
-            <!-- Habilidades Técnicas -->
             @if(isset($profile->technical_skills) && $profile->technical_skills)
-            <section>
-                <h3 class="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-wider border-b border-gray-200 dark:border-gray-700 pb-1">
-                    Habilidades Técnicas
-                </h3>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($profile->technical_skills as $skill)
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                            {{ $skill['software'] ?? '' }}
-                        </span>
-                    @endforeach
-                </div>
-            </section>
+                <section>
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-wider border-b border-gray-200 dark:border-gray-700 pb-1">
+                        Habilidades Técnicas
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach($profile->technical_skills as $skill)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                {{ $skill['software'] ?? '' }}
+                            </span>
+                        @endforeach
+                    </div>
+                </section>
             @endif
 
-            <!-- Habilidades Blandas -->
             @if(isset($profile->soft_skills) && $profile->soft_skills)
-            <section>
-                <h3 class="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-wider border-b border-gray-200 dark:border-gray-700 pb-1">
-                    Competencias
-                </h3>
-                <ul class="space-y-2">
-                    @foreach($profile->soft_skills as $skill)
-                        <li class="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <x-heroicon-s-star class="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                            <span>{{ $skill['skill'] ?? '' }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-            </section>
+                <section>
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-wider border-b border-gray-200 dark:border-gray-700 pb-1">
+                        Competencias
+                    </h3>
+                    <ul class="space-y-2">
+                        @foreach($profile->soft_skills as $skill)
+                            <li class="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <x-heroicon-s-star class="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                                <span>{{ $skill['skill'] ?? '' }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
             @endif
-
         </div>
     </div>
 </div>

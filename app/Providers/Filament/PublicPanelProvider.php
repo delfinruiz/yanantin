@@ -75,11 +75,23 @@ class PublicPanelProvider extends PanelProvider
                     ->slug('profile-plugin')
                     ->setTitle(fn() => __('Profile'))
                     ->setNavigationLabel(fn() => __('Profile'))
+                    ->shouldShowAvatarForm(
+                        value: true,
+                        directory: 'avatars',
+                        rules: 'mimes:jpeg,png,jpg|max:1024'
+                    )
+                    ->shouldShowDeleteAccountForm(false)
+                    ->shouldShowBrowserSessionsForm(true)
+                    ->shouldShowEditPasswordForm(true)
                     ->shouldRegisterNavigation(false),
             ])
             ->renderHook(
                 'panels::head.end',
                 fn (): string => Blade::render("@vite(['resources/js/app.js'])"),
+            )
+            ->renderHook(
+                'panels::body.end',
+                fn(): string => view('filament.footer')->render(), // insertar footer
             )
             ->middleware([
                 EncryptCookies::class,

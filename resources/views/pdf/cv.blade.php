@@ -4,6 +4,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Curriculum Vitae - {{ $user->name }}</title>
     <style>
+        @page {
+            margin: 18px 18px 22px 18px;
+        }
+
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             color: #333;
@@ -108,19 +112,6 @@
 
         .content {
             padding: 30px;
-        }
-        .layout-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .main-col {
-            width: 65%;
-            vertical-align: top;
-            padding-right: 30px;
-        }
-        .sidebar-col {
-            width: 35%;
-            vertical-align: top;
         }
         .section {
             margin-bottom: 30px;
@@ -269,111 +260,96 @@
     </div>
 
     <div class="content">
-        <table class="layout-table">
-            <tr>
-                <!-- Main Column -->
-                <td class="main-col">
-                    
-                    @if($profile->education)
-                    <div class="section">
-                        <div class="section-title">Formación Académica</div>
-                        @foreach($profile->education as $edu)
-                            <div class="item">
-                                <span class="status-badge">{{ $edu['status'] ?? '' }}</span>
-                                <div class="item-title">{{ $edu['title'] ?? '' }}</div>
-                                <div class="item-subtitle">{{ $edu['institution'] ?? '' }}</div>
-                                <div class="item-date">
-                                    {{ isset($edu['start_date']) ? \Carbon\Carbon::parse($edu['start_date'])->format('Y') : '' }} 
-                                    - 
-                                    {{ isset($edu['end_date']) ? \Carbon\Carbon::parse($edu['end_date'])->format('Y') : 'Actualidad' }}
-                                </div>
-                            </div>
-                        @endforeach
+        @if($profile->education)
+        <div class="section">
+            <div class="section-title">Formación Académica</div>
+            @foreach($profile->education as $edu)
+                <div class="item">
+                    <span class="status-badge">{{ $edu['status'] ?? '' }}</span>
+                    <div class="item-title">{{ $edu['title'] ?? '' }}</div>
+                    <div class="item-subtitle">{{ $edu['institution'] ?? '' }}</div>
+                    <div class="item-date">
+                        {{ isset($edu['start_date']) ? \Carbon\Carbon::parse($edu['start_date'])->format('Y') : '' }}
+                        -
+                        {{ isset($edu['end_date']) ? \Carbon\Carbon::parse($edu['end_date'])->format('Y') : 'Actualidad' }}
                     </div>
-                    @endif
+                </div>
+            @endforeach
+        </div>
+        @endif
 
-                    @if($profile->work_experience)
-                    <div class="section">
-                        <div class="section-title">Experiencia Laboral</div>
-                        @foreach($profile->work_experience as $work)
-                            <div class="item">
-                                <div class="item-title">{{ $work['position'] ?? '' }}</div>
-                                <div class="item-subtitle">{{ $work['company'] ?? '' }}</div>
-                                <div class="item-date">
-                                    {{ isset($work['start_date']) ? \Carbon\Carbon::parse($work['start_date'])->format('M Y') : '' }} 
-                                    - 
-                                    {{ isset($work['end_date']) ? \Carbon\Carbon::parse($work['end_date'])->format('M Y') : 'Actualidad' }}
-                                </div>
-                                @if(isset($work['functions']))
-                                    <div class="item-description">{{ $work['functions'] }}</div>
-                                @endif
-                            </div>
-                        @endforeach
+        @if($profile->work_experience)
+        <div class="section">
+            <div class="section-title">Experiencia Laboral</div>
+            @foreach($profile->work_experience as $work)
+                <div class="item">
+                    <div class="item-title">{{ $work['position'] ?? '' }}</div>
+                    <div class="item-subtitle">{{ $work['company'] ?? '' }}</div>
+                    <div class="item-date">
+                        {{ isset($work['start_date']) ? \Carbon\Carbon::parse($work['start_date'])->format('M Y') : '' }}
+                        -
+                        {{ isset($work['end_date']) ? \Carbon\Carbon::parse($work['end_date'])->format('M Y') : 'Actualidad' }}
                     </div>
+                    @if(isset($work['functions']))
+                        <div class="item-description">{{ $work['functions'] }}</div>
                     @endif
+                </div>
+            @endforeach
+        </div>
+        @endif
 
-                    @if($profile->references)
-                    <div class="section">
-                        <div class="section-title">Referencias Laborales</div>
-                        @foreach($profile->references as $ref)
-                            <div class="item">
-                                <div class="item-title">{{ $ref['name'] ?? '' }}</div>
-                                <div class="item-subtitle">{{ $ref['company'] ?? '' }}</div>
-                                <div class="item-description">
-                                    Tel: {{ $ref['phone'] ?? '' }} <br>
-                                    Email: {{ $ref['email'] ?? '' }}
-                                </div>
-                            </div>
-                        @endforeach
+        @if($profile->languages)
+        <div class="section">
+            <div class="section-title">Idiomas</div>
+            <table style="width: 100%; border-collapse: collapse;">
+                @foreach($profile->languages as $lang)
+                    <tr>
+                        <td style="padding: 3px 0; font-size: 12px; color: #333;">{{ $lang['language'] ?? '' }}</td>
+                        <td style="padding: 3px 0; font-size: 11px; text-align: right; color: #666; font-weight: bold;">{{ $lang['level'] ?? '' }}</td>
+                    </tr>
+                @endforeach
+            </table>
+        </div>
+        @endif
+
+        @if($profile->technical_skills)
+        <div class="section">
+            <div class="section-title">Habilidades Técnicas</div>
+            <div>
+                @foreach($profile->technical_skills as $skill)
+                    <span class="skill-badge">{{ $skill['software'] ?? '' }}</span>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        @if($profile->soft_skills)
+        <div class="section">
+            <div class="section-title">Competencias</div>
+            @foreach($profile->soft_skills as $skill)
+                <div class="soft-skill-item">• {{ $skill['skill'] ?? '' }}</div>
+            @endforeach
+        </div>
+        @endif
+
+        @if($profile->references)
+        <div class="section" style="page-break-inside: avoid;">
+            <div class="section-title">Referencias Laborales</div>
+            @foreach($profile->references as $ref)
+                <div class="item" style="page-break-inside: avoid;">
+                    <div class="item-title">{{ $ref['name'] ?? '' }}</div>
+                    <div class="item-subtitle">{{ $ref['company'] ?? '' }}</div>
+                    <div class="item-description">
+                        Tel: {{ $ref['phone'] ?? '' }} <br>
+                        Email: {{ $ref['email'] ?? '' }}
                     </div>
-                    @endif
-
-                </td>
-
-                <!-- Sidebar Column -->
-                <td class="sidebar-col">
-                    
-                    @if($profile->languages)
-                    <div class="section">
-                        <div class="section-title">Idiomas</div>
-                        <table style="width: 100%;">
-                        @foreach($profile->languages as $lang)
-                            <tr>
-                                <td style="padding: 3px 0; font-size: 12px; color: #333;">{{ $lang['language'] ?? '' }}</td>
-                                <td style="padding: 3px 0; font-size: 11px; text-align: right; color: #666; font-weight: bold;">{{ $lang['level'] ?? '' }}</td>
-                            </tr>
-                        @endforeach
-                        </table>
-                    </div>
-                    @endif
-
-                    @if($profile->technical_skills)
-                    <div class="section">
-                        <div class="section-title">Habilidades Técnicas</div>
-                        <div>
-                            @foreach($profile->technical_skills as $skill)
-                                <span class="skill-badge">{{ $skill['software'] ?? '' }}</span>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    @if($profile->soft_skills)
-                    <div class="section">
-                        <div class="section-title">Competencias</div>
-                        @foreach($profile->soft_skills as $skill)
-                            <div class="soft-skill-item">• {{ $skill['skill'] ?? '' }}</div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                </td>
-            </tr>
-        </table>
+                </div>
+            @endforeach
+        </div>
+        @endif
     </div>
 
-    <!-- Footer -->
-    <div style="position: fixed; bottom: 0; left: 0; right: 0; padding: 20px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; background-color: #fff;">
+    <div style="margin-top: 20px; padding: 10px 20px 0 20px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb;">
         Generado por {{ \App\Models\Setting::first()->company_name ?? 'Cahilt Transgresoria Digital' }}
     </div>
 

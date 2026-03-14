@@ -8,6 +8,19 @@ use App\Models\Dimension;
 
 class SurveyStatsService
 {
+    private function isMissingValue(mixed $value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return true;
+        }
+
+        return $value === 'Sin Respuesta';
+    }
+
     public function dimensionStats(Survey $survey): array
     {
         $dimensions = $survey->questions()->select('item')->distinct()->pluck('item');
@@ -16,18 +29,26 @@ class SurveyStatsService
             $questions = $survey->questions()->where('item', $dim)->get(['id','type']);
             $qMap = $questions->keyBy('id');
             $qIds = $questions->pluck('id');
-            $responses = Response::whereIn('question_id', $qIds)->get(['question_id','value']);
+            $responses = Response::query()->whereIn('question_id', $qIds)
+                ->withoutInterview()
+                ->get(['question_id','value']);
 
             $normalized = [];
             $yesCount = 0;
             $boolCount = 0;
             $textCount = 0;
             $multiCount = 0;
+            $answeredCount = 0;
 
             foreach ($responses as $r) {
                 $qid = $r->question_id;
                 $type = $qMap->get($qid)?->type;
                 $val = $r->value;
+                if ($this->isMissingValue($val)) {
+                    continue;
+                }
+
+                $answeredCount++;
                 if ($type === 'scale_10') {
                     if (is_numeric($val)) $normalized[] = ((float)$val / 10.0) * 100.0;
                 } elseif ($type === 'scale_5') {
@@ -75,7 +96,7 @@ class SurveyStatsService
             }
             $result[$dim] = [
                 'questions_count' => $qIds->count(),
-                'responses_count' => $responses->count(),
+                'responses_count' => $answeredCount,
                 'avg' => $avgNorm, // 0-100
                 'kpi' => $kpi,
                 'compliance_pct' => $compliance,
@@ -113,7 +134,9 @@ class SurveyStatsService
     {
         $questions = $survey->questions()->get(['id','type','item']);
         $qMap = $questions->keyBy('id');
-        $responses = Response::whereIn('question_id', $questions->pluck('id'))->get(['question_id','value']);
+        $responses = Response::query()->whereIn('question_id', $questions->pluck('id'))
+            ->withoutInterview()
+            ->get(['question_id','value']);
 
         $data = [
             'scale_5' => ['count' => 0, 'responses' => 0, 'avg' => null],
@@ -136,6 +159,9 @@ class SurveyStatsService
             $qid = $r->question_id;
             $t = $qMap->get($qid)?->type;
             $v = $r->value;
+            if ($this->isMissingValue($v)) {
+                continue;
+            }
             if ($t === 'scale_5') {
                 $data['scale_5']['responses']++;
                 if (is_numeric($v)) $norm['scale_5'][] = ((float)$v / 5.0) * 100.0;

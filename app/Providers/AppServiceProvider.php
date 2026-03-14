@@ -92,6 +92,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         JobApplication::observe(JobApplicationObserver::class);
+        \App\Models\JobInterview::observe(\App\Observers\JobInterviewObserver::class);
 
         try {
             $settings = app(SettingService::class);
@@ -110,8 +111,8 @@ class AppServiceProvider extends ServiceProvider
             $logoLight = $settings->get('logo_light');
             $logoDark = $settings->get('logo_dark');
             
-            View::share('logo_light', $logoLight ? asset('storage/' . $logoLight) : asset('/asset/images/portada/logo-light.svg'));
-            View::share('logo_dark', $logoDark ? asset('storage/' . $logoDark) : asset('/asset/images/portada/logo-dark.svg'));
+            View::share('logo_light', $logoLight ? asset('storage/' . $logoLight) : asset('/asset/images/logo-light.png'));
+            View::share('logo_dark', $logoDark ? asset('storage/' . $logoDark) : asset('/asset/images/logo-dark.png'));
             View::share('company_name', $companyName ?? 'Finanzas Personales');
         } catch (\Exception $e) {
             // Silently fail if DB is not available or settings table doesn't exist yet

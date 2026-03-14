@@ -16,6 +16,7 @@ class Survey extends Model
         'description',
         'active',
         'is_public',
+        'is_interview',
         'public_enabled',
         'public_token',
         'deadline',
@@ -25,6 +26,7 @@ class Survey extends Model
     protected $casts = [
         'active' => 'boolean',
         'is_public' => 'boolean',
+        'is_interview' => 'boolean',
         'public_enabled' => 'boolean',
         'deadline' => 'datetime',
     ];
@@ -69,8 +71,14 @@ class Survey extends Model
         if (! $this->exists) {
             return false;
         }
-        $totalUsers = \App\Models\User::count();
-        $assigned = $this->users()->count();
+        $totalUsers = \App\Models\User::query()
+            ->where('is_internal', true)
+            ->count();
+
+        $assigned = $this->users()
+            ->where('is_internal', true)
+            ->count();
+
         return $totalUsers > 0 && $assigned >= $totalUsers;
     }
 
@@ -88,9 +96,14 @@ class Survey extends Model
 
     public function scopePendingForUser($query, int $userId)
     {
-        return $query->whereHas('questions', function ($q) use ($userId) {
-            $q->where('required', true)
-              ->whereDoesntHave('responses', fn ($r) => $r->where('user_id', $userId));
+        return $query->where(function ($q) use ($userId) {
+            $q->whereHas('questions', function ($qq) use ($userId) {
+                $qq->where('required', true)
+                    ->whereDoesntHave('responses', fn ($r) => $r->where('user_id', $userId));
+            })->orWhere(function ($q2) use ($userId) {
+                $q2->whereDoesntHave('questions', fn ($qq) => $qq->where('required', true))
+                    ->whereDoesntHave('questions.responses', fn ($r) => $r->where('user_id', $userId));
+            });
         });
     }
 }

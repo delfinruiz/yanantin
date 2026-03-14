@@ -237,10 +237,17 @@ class EventResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->poll('5s')
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->label(__('events.field.title'))
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    })
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('calendar.name')
@@ -261,7 +268,15 @@ class EventResource extends Resource
                     ->label(__('events.field.end'))
                     ->sortable(),
             ])
+            ->defaultSort('starts_at', 'desc')
             ->filters([
+                Tables\Filters\Filter::make('current_year')
+                    ->label(__('events.filter.current_year') !== 'events.filter.current_year' ? __('events.filter.current_year') : 'Año Actual')
+                    ->query(fn (Builder $query) => $query->whereBetween('starts_at', [
+                        now()->startOfYear(),
+                        now()->endOfYear(),
+                    ]))
+                    ->default(),
                 Tables\Filters\SelectFilter::make('calendar_id')
                     ->label(__('events.field.calendar'))
                     ->options(function () {

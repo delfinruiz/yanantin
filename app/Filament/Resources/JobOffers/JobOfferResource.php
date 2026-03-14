@@ -63,6 +63,15 @@ class JobOfferResource extends Resource
         return Gate::allows('viewAny', JobOffer::class);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\JobOffers\RelationManagers\InterviewsRelationManager::class,
+            // RelationManagers\JobOfferRequirementsRelationManager::class,
+            // RelationManagers\JobApplicationsRelationManager::class, 
+        ];
+    }
+
     public static function getPages(): array
     {
         return [

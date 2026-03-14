@@ -61,7 +61,7 @@
             </div>
         </div>
 
-    <div wire:poll.15s="pollCalendar"></div>
+
 
     <div
         wire:ignore
@@ -221,6 +221,10 @@
                     calendar.refetchEvents();
                     calendar.setOption('events', makeEventsUrl(value));
                 });
+
+                // Auto-refresh on load to catch async sync updates
+                setTimeout(() => calendar.refetchEvents(), 3000);
+                setTimeout(() => calendar.refetchEvents(), 6000);
 
                 window.fpCalendar = calendar;
             })();

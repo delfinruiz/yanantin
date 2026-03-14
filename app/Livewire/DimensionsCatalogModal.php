@@ -89,6 +89,8 @@ class DimensionsCatalogModal extends Component implements HasForms, HasActions
                             ->label(__('surveys.catalog.fields.weight'))
                             ->placeholder(__('surveys.catalog.fields.weight'))
                             ->numeric()
+                            ->minValue(1)
+                            ->maxValue(100)
                             ->live()
                             ->hint(function ($state) {
                                 $currentTotal = $this->getCurrentTotalWeight();
@@ -147,6 +149,22 @@ class DimensionsCatalogModal extends Component implements HasForms, HasActions
 
         $currentTotal = $this->getCurrentTotalWeight();
         $newWeight = (float) ($this->weight ?? 0);
+
+        if ($newWeight <= 0) {
+            Notification::make()
+                ->title('El peso debe ser un número entre 1 y 100.')
+                ->danger()
+                ->send();
+            return;
+        }
+        
+        if ($newWeight > 100) {
+            Notification::make()
+                ->title('El peso debe ser un número entre 1 y 100.')
+                ->danger()
+                ->send();
+            return;
+        }
         
         if ($currentTotal + $newWeight > 100) {
             Notification::make()
@@ -232,6 +250,22 @@ class DimensionsCatalogModal extends Component implements HasForms, HasActions
         // Note: Logic should ideally sum all dimensions of the *new* survey name
         $currentTotal = Dimension::where('survey_name', $newSurveyName)->where('id', '!=', $this->editId)->sum('weight');
         $valWeight = (float) ($newWeight ?? 0);
+
+        if ($valWeight <= 0) {
+            Notification::make()
+                ->title('El peso debe ser un número entre 1 y 100.')
+                ->danger()
+                ->send();
+            return;
+        }
+        
+        if ($valWeight > 100) {
+            Notification::make()
+                ->title('El peso debe ser un número entre 1 y 100.')
+                ->danger()
+                ->send();
+            return;
+        }
 
         if ($currentTotal + $valWeight > 100) {
              Notification::make()

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Log;
 
 class PublicRegisterController extends Controller
 {
@@ -44,15 +45,21 @@ class PublicRegisterController extends Controller
             'password' => Hash::make($data['password']),
             'is_internal' => false,
         ]);
-        
-        event(new Registered($user));
+
+        $verificationStatus = 'verification-link-sent';
         try {
-            $user->sendEmailVerificationNotification();
+            event(new Registered($user));
         } catch (\Throwable $e) {
-            // silent: mail may be disabled in local env
+            Log::warning('No se pudo enviar correo de verificación al registrar usuario.', [
+                'user_id' => $user->id,
+                'exception' => $e->getMessage(),
+            ]);
+            $verificationStatus = 'verification-link-failed';
         }
 
-        return redirect()->route('filament.public.auth.login')
-            ->with('status', 'verification-link-sent');
+        Auth::login($user);
+
+        return redirect()->route('verification.notice')
+            ->with('status', $verificationStatus);
     }
 }

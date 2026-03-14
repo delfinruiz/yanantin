@@ -7,6 +7,7 @@ use App\Models\JobOffer;
 use App\Models\JobOfferRequirement;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ApplicationScoringService
 {
@@ -89,6 +90,7 @@ class ApplicationScoringService
         $requiredExperience = $this->getRequiredExperienceYears($jobOffer);
         $requiredEducationLevel = $this->getRequiredEducationLevel($jobOffer);
         $requiredSkills = $this->getRequiredSkills($jobOffer);
+        $requiredLanguages = $this->getRequiredLanguages($jobOffer);
 
         // 1. Validar Experiencia
         $candidateExperience = $this->calculateCandidateExperienceYears($candidateData);
@@ -146,7 +148,54 @@ class ApplicationScoringService
                 ];
             }
         } else {
-            $log['skills_check'] = ['status' => 'skipped_no_requirements'];
+            $log['skills_check'] = [
+                'required_count' => 0,
+                'missing_count' => 0,
+                'passed' => true,
+                'status' => 'skipped_no_requirements',
+            ];
+        }
+
+        // 4. Validar Idiomas Obligatorios (considerando nivel requerido)
+        if (! empty($requiredLanguages)) {
+            $candidateLanguages = $this->getCandidateLanguages($candidateData);
+
+            $missingLanguages = [];
+            foreach ($requiredLanguages as $req) {
+                $languageName = $this->normalizeLanguageName($req['language'] ?? '');
+                if ($languageName === '') {
+                    continue;
+                }
+
+                $candidateRank = $candidateLanguages[$languageName] ?? null;
+                if ($candidateRank === null) {
+                    $missingLanguages[] = $req['language'] ?? '';
+                    continue;
+                }
+
+                $requiredRank = $this->normalizeLanguageLevelRank($req['level'] ?? null);
+                if ($requiredRank !== null && $candidateRank < $requiredRank) {
+                    $missingLanguages[] = $req['language'] ?? '';
+                }
+            }
+
+            $languagesPassed = empty(array_filter($missingLanguages));
+
+            $log['languages_check'] = [
+                'required_count' => count($requiredLanguages),
+                'missing_count' => count(array_filter($missingLanguages)),
+                'passed' => $languagesPassed,
+            ];
+
+            if (! $languagesPassed) {
+                return [
+                    'status' => 'not_eligible',
+                    'reason' => 'Nivel de idioma insuficiente',
+                    'log' => $log,
+                ];
+            }
+        } else {
+            $log['languages_check'] = ['status' => 'skipped_no_requirements'];
         }
 
         return ['status' => 'eligible', 'reason' => null, 'log' => $log];
@@ -190,10 +239,10 @@ class ApplicationScoringService
 
         if (! empty($desirableSkills)) {
             $matchedSkillsCount = 0;
-            $normalizedCandidateSkills = array_map('strtolower', $candidateSkills);
+            $normalizedCandidateSkills = array_map(fn (string $s) => $this->normalizeSkillName($s), $candidateSkills);
             
             foreach ($desirableSkills as $skill) {
-                if (in_array(strtolower($skill), $normalizedCandidateSkills)) {
+                if (in_array($this->normalizeSkillName($skill), $normalizedCandidateSkills)) {
                     $matchedSkillsCount++;
                 }
             }
@@ -225,7 +274,55 @@ class ApplicationScoringService
         ];
 
         // 4. Certificaciones (Pendiente: no tenemos estructura clara en cv_snapshot para esto aun)
-        // Asignamos 0 por ahora.
+        // Mientras no tengamos una estructura explícita de certificaciones, usamos este bucket (20 pts) como bonus
+        // por nivel de idioma superior al requerido (si aplica).
+        $requiredLanguages = $this->getRequiredLanguages($jobOffer);
+        $languageBonus = 0;
+        $metLanguageCount = 0;
+        $superiorLanguageCount = 0;
+        if (! empty($requiredLanguages)) {
+            $candidateLanguages = $this->getCandidateLanguages($candidateData);
+
+            $candidatesForBonus = array_values(array_filter($requiredLanguages, fn ($r) => ! empty($r['level'])));
+            $countForBonus = count($candidatesForBonus);
+
+            if ($countForBonus > 0) {
+                $pointsPerLanguage = $weights['certifications'] / $countForBonus;
+
+                foreach ($candidatesForBonus as $req) {
+                    $languageName = $this->normalizeLanguageName($req['language'] ?? '');
+                    if ($languageName === '') {
+                        continue;
+                    }
+
+                    $candidateRank = $candidateLanguages[$languageName] ?? null;
+                    $requiredRank = $this->normalizeLanguageLevelRank($req['level'] ?? null);
+
+                    if ($candidateRank === null || $requiredRank === null) {
+                        continue;
+                    }
+
+                    if ($candidateRank >= $requiredRank) {
+                        $metLanguageCount++;
+                        $languageBonus += $pointsPerLanguage;
+                        if ($candidateRank > $requiredRank) {
+                            $superiorLanguageCount++;
+                        }
+                    }
+                }
+
+                $languageBonus = round($languageBonus, 2);
+            }
+        }
+
+        $score += $languageBonus;
+        $log['scoring_languages'] = [
+            'required_count' => count($requiredLanguages),
+            'met_count' => $metLanguageCount,
+            'superior_count' => $superiorLanguageCount,
+            'points' => $languageBonus,
+        ];
+
         $log['scoring_certifications'] = ['points' => 0, 'note' => 'Not implemented yet'];
 
         return [
@@ -311,22 +408,60 @@ class ApplicationScoringService
             'doctorado' => 6,
         ];
 
-        $valA = $hierarchy[strtolower(trim($levelA))] ?? 0;
-        $valB = $hierarchy[strtolower(trim($levelB))] ?? 0;
+        $valA = $hierarchy[$this->normalizeEducationLevel($levelA)] ?? 0;
+        $valB = $hierarchy[$this->normalizeEducationLevel($levelB)] ?? 0;
 
         return $valA <=> $valB;
+    }
+
+    private function normalizeEducationLevel(?string $level): string
+    {
+        $value = Str::of((string) $level)->trim()->lower();
+        $value = Str::ascii((string) $value);
+
+        $normalized = match (true) {
+            $value === '' => 'tecnico',
+
+            str_contains($value, 'secundaria') || str_contains($value, 'media') => 'secundaria',
+
+            str_contains($value, 'tecnico') || str_contains($value, 'tecnica') => 'tecnico',
+
+            str_contains($value, 'doctor') => 'doctorado',
+
+            str_contains($value, 'postgrado')
+                || str_contains($value, 'posgrado')
+                || str_contains($value, 'maestr')
+                || str_contains($value, 'master')
+                || str_contains($value, 'magister') => 'magister',
+
+            str_contains($value, 'licenci') => 'licenciatura',
+
+            str_contains($value, 'universit')
+                || str_contains($value, 'pregrado')
+                || str_contains($value, 'ingenier')
+                || str_contains($value, 'profesional') => 'profesional',
+
+            default => (string) $value,
+        };
+
+        return $normalized;
     }
 
     private function getRequiredSkills(JobOffer $jobOffer): array
     {
         // Skills podrían estar como requirements con categoría 'Habilidad técnica', 'Habilidad blanda' o 'Idioma'
         $requirements = $jobOffer->jobOfferRequirements()
-            ->whereIn('category', ['Habilidad técnica', 'Habilidad blanda', 'Idioma']) 
+            ->whereIn('category', ['Habilidad técnica', 'Habilidad blanda']) 
             ->where('type', 'Obligatorio')
             ->get();
             
-        // Usamos 'evidence' como el nombre del skill.
-        return $requirements->pluck('evidence')->filter()->map(fn($item) => trim($item))->toArray(); 
+        return $requirements
+            ->pluck('evidence')
+            ->filter()
+            ->flatMap(fn ($item) => $this->splitRequirementEvidence((string) $item))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function getDesirableSkills(JobOffer $jobOffer): array
@@ -336,7 +471,32 @@ class ApplicationScoringService
             ->where('type', 'Deseable')
             ->get();
 
-        return $requirements->pluck('evidence')->filter()->map(fn($item) => trim($item))->toArray();
+        return $requirements
+            ->pluck('evidence')
+            ->filter()
+            ->flatMap(fn ($item) => $this->splitRequirementEvidence((string) $item))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function getRequiredLanguages(JobOffer $jobOffer): array
+    {
+        $requirements = $jobOffer->jobOfferRequirements()
+            ->where('category', 'Idioma')
+            ->where('type', 'Obligatorio')
+            ->get();
+
+        return $requirements
+            ->map(function (JobOfferRequirement $req) {
+                return [
+                    'language' => (string) ($req->evidence ?? ''),
+                    'level' => $req->level ? (string) $req->level : null,
+                ];
+            })
+            ->filter(fn (array $r) => trim((string) ($r['language'] ?? '')) !== '')
+            ->values()
+            ->all();
     }
 
     private function getCandidateSkills(array $candidateData): array
@@ -368,17 +528,91 @@ class ApplicationScoringService
         return array_unique(array_filter($skills));
     }
 
+    private function getCandidateLanguages(array $candidateData): array
+    {
+        $languages = $candidateData['languages'] ?? [];
+        $mapped = [];
+
+        foreach ($languages as $l) {
+            $name = is_array($l) ? ($l['language'] ?? $l['name'] ?? '') : $l;
+            $level = is_array($l) ? ($l['level'] ?? null) : null;
+
+            $normalizedName = $this->normalizeLanguageName((string) $name);
+            if ($normalizedName === '') {
+                continue;
+            }
+
+            $rank = $this->normalizeLanguageLevelRank($level);
+            if ($rank === null) {
+                $rank = 0;
+            }
+
+            $mapped[$normalizedName] = max($mapped[$normalizedName] ?? 0, $rank);
+        }
+
+        return $mapped;
+    }
+
+    private function normalizeLanguageName(string $value): string
+    {
+        $value = Str::of($value)->trim()->lower();
+        $value = Str::ascii((string) $value);
+        return (string) $value;
+    }
+
+    private function normalizeLanguageLevelRank(?string $value): ?int
+    {
+        $normalized = Str::of((string) $value)->trim()->lower();
+        $normalized = Str::ascii((string) $normalized);
+        $normalized = (string) $normalized;
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return match (true) {
+            str_contains($normalized, 'bas') => 1,
+            str_contains($normalized, 'inter') || str_contains($normalized, 'medio') => 2,
+            str_contains($normalized, 'avan') => 3,
+            str_contains($normalized, 'nativ') => 4,
+            default => null,
+        };
+    }
+
     private function findMissingSkills(array $required, array $candidate): array
     {
         $missing = [];
-        $candidateNormalized = array_map('strtolower', array_map('trim', $candidate));
+        $candidateNormalized = array_map(fn (string $s) => $this->normalizeSkillName($s), $candidate);
 
         foreach ($required as $req) {
-            if (! in_array(strtolower(trim($req)), $candidateNormalized)) {
+            if (! in_array($this->normalizeSkillName($req), $candidateNormalized)) {
                 $missing[] = $req;
             }
         }
 
         return $missing;
+    }
+
+    private function splitRequirementEvidence(string $value): array
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return [];
+        }
+
+        $parts = preg_split('/[,\;\|\/\n]+/', $value) ?: [];
+        $parts = array_map('trim', $parts);
+        $parts = array_filter($parts, fn ($p) => $p !== '');
+
+        return array_values($parts);
+    }
+
+    private function normalizeSkillName(string $value): string
+    {
+        $value = Str::of($value)->trim()->lower();
+        $value = Str::ascii((string) $value);
+        $value = preg_replace('/\s+/', ' ', (string) $value) ?? (string) $value;
+        $value = preg_replace('/[^\p{L}\p{N}\s\+\#\.\-]/u', '', (string) $value) ?? (string) $value;
+        return trim((string) $value);
     }
 }

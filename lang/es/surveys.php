@@ -56,6 +56,7 @@ return [
         'unassigned' => 'Sin asignar',
     ],
     'actions' => [
+        'create_blank' => 'Crear en Blanco',
         'report_pdf' => 'Reporte PDF',
         'export_responses' => 'Exportar respuestas',
         'clear_responses' => 'Limpiar respuestas',

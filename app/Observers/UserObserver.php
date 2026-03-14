@@ -23,6 +23,19 @@ class UserObserver
             ]);
         }
 
+        $shouldJoin = (bool) $user->is_internal;
+        try {
+            if (method_exists($user, 'hasRole') && $user->hasRole('public')) {
+                $shouldJoin = false;
+            }
+        } catch (\Throwable $e) {
+            $shouldJoin = (bool) $user->is_internal;
+        }
+
+        if (! $shouldJoin) {
+            return;
+        }
+
         try {
             $group = Group::where('name', 'General')->first();
             if ($group && $group->conversation) {

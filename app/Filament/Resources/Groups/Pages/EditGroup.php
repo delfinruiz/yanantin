@@ -118,7 +118,9 @@ class EditGroup extends EditRecord
 
         // Handle Public Group conversion: Ensure all users are added
         if ($record->type === GroupType::PUBLIC->value || $record->type === 'public') {
-             $allUsers = User::all();
+             $allUsers = User::query()
+                 ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'public'))
+                 ->get();
              $existingIds = $conversation->participants()
                  ->where('participantable_type', app(User::class)->getMorphClass())
                  ->pluck('participantable_id')

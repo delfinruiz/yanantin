@@ -63,6 +63,11 @@
         @if(session('error'))
             <div class="msg-error">{{ session('error') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="msg-error">
+                Hay preguntas obligatorias sin responder. Revisa los campos marcados con <span style="font-weight:600;">*</span>.
+            </div>
+        @endif
         @if(session('message'))
             <div class="msg-ok">{{ session('message') }}</div>
         @endif
@@ -74,10 +79,15 @@
                     <div style="margin-top:.5rem;">
                         @foreach($qs as $q)
                             <div style="margin-bottom:1rem;">
-                                <label class="label">{{ $q->content }} @if($q->required) * @endif</label>
+                                <label class="label">
+                                    {{ $q->content }}
+                                    @if($q->required)
+                                        <span style="color:#ef4444;font-weight:700;">*</span>
+                                    @endif
+                                </label>
                                 @php $key = 'q_'.$q->id; $val = $state[$key] ?? null; @endphp
                                 @if($q->type === 'text')
-                                    <textarea name="{{ $key }}" rows="3" class="input">{{ old($key, $val) }}</textarea>
+                                    <textarea name="{{ $key }}" rows="3" class="input" @if($q->required) required @endif>{{ old($key, $val) }}</textarea>
                                 @elseif($q->type === 'bool' || $q->type === 'boolean' || $q->type === 'vf' || $q->type === 'true_false')
                                     <div class="radio-group" role="radiogroup" aria-label="{{ $q->content }}">
                                         <label style="display:inline-flex;align-items:center;gap:.5rem;margin-right:1rem;">
@@ -90,33 +100,40 @@
                                         </label>
                                     </div>
                                 @elseif($q->type === 'scale_5')
-                                    <select name="{{ $key }}" class="input">
+                                    <select name="{{ $key }}" class="input" @if($q->required) required @endif>
+                                        <option value="" @if(old($key, $val) === null || old($key, $val) === '') selected @endif>Seleccione…</option>
                                         @foreach(['0','1','2','3','4','5'] as $o)
                                             <option value="{{ $o }}" @if(old($key,$val)===$o) selected @endif>{{ $o }}</option>
                                         @endforeach
                                     </select>
                                 @elseif($q->type === 'scale_10')
-                                    <select name="{{ $key }}" class="input">
+                                    <select name="{{ $key }}" class="input" @if($q->required) required @endif>
+                                        <option value="" @if(old($key, $val) === null || old($key, $val) === '') selected @endif>Seleccione…</option>
                                         @for($i=0;$i<=10;$i++)
                                             <option value="{{ $i }}" @if(old($key,$val)===(string)$i) selected @endif>{{ $i }}</option>
                                         @endfor
                                     </select>
                                 @elseif($q->type === 'likert')
                                     @php $options = $q->options ?? ['1'=>'Nunca','2'=>'Casi nunca','3'=>'A veces','4'=>'Casi siempre','5'=>'Siempre']; @endphp
-                                    <select name="{{ $key }}" class="input">
+                                    <select name="{{ $key }}" class="input" @if($q->required) required @endif>
+                                        <option value="" @if(old($key, $val) === null || old($key, $val) === '') selected @endif>Seleccione…</option>
                                         @foreach($options as $ov => $ol)
                                             <option value="{{ $ov }}" @if(old($key,$val)===(string)$ov) selected @endif>{{ $ol }}</option>
                                         @endforeach
                                     </select>
                                 @elseif($q->type === 'multi')
                                     @php $options = $q->options ?? []; $selected = is_array($val) ? $val : (json_decode($val,true) ?: []); @endphp
-                                    <select name="{{ $key }}[]" multiple class="input">
+                                    <select name="{{ $key }}[]" multiple class="input" @if($q->required) required @endif>
                                         @foreach($options as $ov => $ol)
                                             <option value="{{ $ov }}" @if(in_array($ov, old($key,$selected))) selected @endif>{{ $ol }}</option>
                                         @endforeach
                                     </select>
                                 @else
-                                    <input type="text" name="{{ $key }}" value="{{ old($key,$val) }}" class="input">
+                                    <input type="text" name="{{ $key }}" value="{{ old($key,$val) }}" class="input" @if($q->required) required @endif>
+                                @endif
+
+                                @if ($errors->has($key))
+                                    <div class="msg-error">{{ $errors->first($key) }}</div>
                                 @endif
                             </div>
                         @endforeach

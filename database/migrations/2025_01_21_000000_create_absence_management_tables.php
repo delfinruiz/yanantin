@@ -35,7 +35,7 @@ return new class extends Migration
         if (!Schema::hasTable('vacation_ledgers')) {
             Schema::create('vacation_ledgers', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('employee_profile_id')->constrained()->onDelete('cascade');
+                $table->unsignedBigInteger('employee_profile_id');
                 $table->decimal('days', 8, 2);
                 $table->string('type');
                 $table->string('description')->nullable();
@@ -47,7 +47,7 @@ return new class extends Migration
         if (!Schema::hasTable('absence_requests')) {
             Schema::create('absence_requests', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('employee_profile_id')->constrained()->onDelete('cascade');
+                $table->unsignedBigInteger('employee_profile_id');
                 $table->foreignId('absence_type_id')->constrained();
                 $table->date('start_date');
                 $table->date('end_date');
@@ -63,6 +63,20 @@ return new class extends Migration
                 $table->json('attachments')->nullable();
                 $table->timestamps();
             });
+        }
+
+        if (Schema::hasTable('employee_profiles')) {
+            if (Schema::hasTable('vacation_ledgers')) {
+                Schema::table('vacation_ledgers', function (Blueprint $table) {
+                    $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
+                });
+            }
+
+            if (Schema::hasTable('absence_requests')) {
+                Schema::table('absence_requests', function (Blueprint $table) {
+                    $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
+                });
+            }
         }
     }
 

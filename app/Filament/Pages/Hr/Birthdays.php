@@ -19,15 +19,16 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\BirthdayGreetingMail;
 use App\Services\BirthdayGreetingService;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
 
 class Birthdays extends Page implements Tables\Contracts\HasTable
 {
     use Tables\Concerns\InteractsWithTable;
+    use HasPageShield;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-gift';
     protected static ?string $navigationLabel = 'Cumpleaños';
@@ -37,11 +38,6 @@ class Birthdays extends Page implements Tables\Contracts\HasTable
     public static function getNavigationGroup(): ?string
     {
         return __('filament-navigation.hr');
-    }
-
-    public static function canAccess(): bool
-    {
-        return Gate::allows('View:' . static::class);
     }
 
     public function getMaxContentWidth(): Width

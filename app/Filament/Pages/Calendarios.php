@@ -53,7 +53,18 @@ class Calendarios extends Page
 
     protected function getHeaderActions(): array
     {
-        return [];
+        return [
+            Action::make('refresh')
+                ->label(__('calendars.refresh') !== 'calendars.refresh' ? __('calendars.refresh') : 'Actualizar')
+                ->color('gray')
+                ->action(function () {
+                    $this->dispatch('refresh-calendar');
+                    Notification::make()
+                        ->title(__('calendars.notification.refreshed') !== 'calendars.notification.refreshed' ? __('calendars.notification.refreshed') : 'Calendario actualizado')
+                        ->success()
+                        ->send();
+                }),
+        ];
     }
 
     public function mount(): void
@@ -74,11 +85,6 @@ class Calendarios extends Page
     public function getMaxContentWidth(): Width
     {
         return Width::Full;
-    }
-
-    public function pollCalendar(): void
-    {
-        $this->dispatch('refresh-calendar');
     }
 
     public function createEventAction(): Action
@@ -317,6 +323,52 @@ class Calendarios extends Page
                  $user = Auth::user();
                  $canEdit = $event && ($event->calendar->user_id === $user->id || $event->calendar->manager_user_id === $user->id);
                  return $canEdit ? Action::make('save')->label(__('Save'))->submit('editEvent') : false;
+            })
+            ->extraModalFooterActions(function (array $arguments) {
+                $event = Event::find($arguments['id'] ?? null);
+                $user = Auth::user();
+                $canEdit = $event && ($event->calendar->user_id === $user->id || $event->calendar->manager_user_id === $user->id);
+                
+                if (!$canEdit) {
+                    return [];
+                }
+
+                return [
+                    Action::make('deleteEvent')
+                        ->label(__('calendars.delete_event') !== 'calendars.delete_event' ? __('calendars.delete_event') : 'Eliminar')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function () use ($arguments) {
+                            $event = Event::find($arguments['id']);
+                            if (!$event) return;
+
+                            $user = Auth::user();
+                            $calendar = $event->calendar;
+
+                            // CalDAV Delete
+                            if ($calendar && $calendar->is_personal && $calendar->user_id === $user->id) {
+                                try {
+                                    $emailAccount = EmailAccount::where('user_id', $user->id)->first();
+                                    if ($emailAccount) {
+                                        $service = app(CalDavService::class);
+                                        $service->deleteEvent($emailAccount, $event);
+                                    }
+                                } catch (\Throwable $e) {
+                                    Log::error('CalDAV Delete Error: ' . $e->getMessage());
+                                }
+                            }
+
+                            $event->delete();
+
+                            $this->dispatch('refresh-calendar');
+                            
+                            Notification::make()
+                                ->title(__('calendars.notification.deleted_ok') !== 'calendars.notification.deleted_ok' ? __('calendars.notification.deleted_ok') : 'Evento eliminado correctamente')
+                                ->success()
+                                ->send();
+                        })
+                        ->cancelParentActions()
+                ];
             });
     }
 }

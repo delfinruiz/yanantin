@@ -21,9 +21,10 @@ class SurveyReportController extends Controller
         
         $respondentNames = [];
         if ($survey->is_public) {
-            $uIds = Response::whereIn('question_id', $qIds)->whereNotNull('user_id')->distinct()->pluck('user_id');
+            $uIds = Response::query()->whereIn('question_id', $qIds)->withoutInterview()->whereNotNull('user_id')->distinct()->pluck('user_id');
             $userNames = \App\Models\User::whereIn('id', $uIds)->pluck('name')->all();
-            $guestNames = Response::whereIn('question_id', $qIds)
+            $guestNames = Response::query()->whereIn('question_id', $qIds)
+                ->withoutInterview()
                 ->whereNull('user_id')
                 ->whereNotNull('guest_name')
                 ->select('guest_email', 'guest_name')
@@ -36,8 +37,22 @@ class SurveyReportController extends Controller
         
         $typeSummary = $service->typeSummary($survey);
         
-        $userCount = Response::whereIn('question_id', $qIds)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
-        $guestCount = Response::whereIn('question_id', $qIds)->whereNull('user_id')->distinct('guest_email')->count('guest_email');
+        $userCount = Response::query()->whereIn('question_id', $qIds)
+            ->withoutInterview()
+            ->whereNotNull('user_id')
+            ->whereNotNull('value')
+            ->where('value', '!=', 'Sin Respuesta')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        $guestCount = Response::query()->whereIn('question_id', $qIds)
+            ->withoutInterview()
+            ->whereNull('user_id')
+            ->whereNotNull('guest_email')
+            ->whereNotNull('value')
+            ->where('value', '!=', 'Sin Respuesta')
+            ->distinct('guest_email')
+            ->count('guest_email');
         $respondedCount = $userCount + $guestCount;
 
         // Participants target

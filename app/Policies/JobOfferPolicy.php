@@ -1,82 +1,70 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
+use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\JobOffer;
-use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class JobOfferPolicy
 {
     use HandlesAuthorization;
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    
+    public function viewAny(AuthUser $authUser): bool
     {
-        return $user->can('ViewAny:JobOffer');
+        return $authUser->can('ViewAny:JobOffer');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, JobOffer $jobOffer): bool
+    public function view(AuthUser $authUser, JobOffer $jobOffer): bool
     {
-        return $user->can('View:JobOffer');
+        return $authUser->can('View:JobOffer');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
+    public function create(AuthUser $authUser): bool
     {
-        return $user->can('Create:JobOffer');
+        return $authUser->can('Create:JobOffer');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, JobOffer $jobOffer): bool
+    public function update(AuthUser $authUser, JobOffer $jobOffer): bool
     {
-        // Verificar permisos estándar
-        if ($user->can('Update:JobOffer')) {
-            return true;
-        }
-
-        // Permitir edición si hay una solicitud de cambio APROBADA para esta oferta y el usuario es el solicitante
-        $hasApprovedRequest = $jobOffer->changeRequests()
-            ->where('requester_id', $user->id)
-            ->where('status', 'approved')
-            ->exists();
-
-        if ($hasApprovedRequest) {
-            return true;
-        }
-
-        return false;
+        return $authUser->can('Update:JobOffer');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, JobOffer $jobOffer): bool
+    public function delete(AuthUser $authUser, JobOffer $jobOffer): bool
     {
-        return $user->can('Delete:JobOffer');
+        return $authUser->can('Delete:JobOffer');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, JobOffer $jobOffer): bool
+    public function restore(AuthUser $authUser, JobOffer $jobOffer): bool
     {
-        return $user->can('Restore:JobOffer');
+        return $authUser->can('Restore:JobOffer');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, JobOffer $jobOffer): bool
+    public function forceDelete(AuthUser $authUser, JobOffer $jobOffer): bool
     {
-        return $user->can('ForceDelete:JobOffer');
+        return $authUser->can('ForceDelete:JobOffer');
     }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:JobOffer');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:JobOffer');
+    }
+
+    public function replicate(AuthUser $authUser, JobOffer $jobOffer): bool
+    {
+        return $authUser->can('Replicate:JobOffer');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:JobOffer');
+    }
+
 }

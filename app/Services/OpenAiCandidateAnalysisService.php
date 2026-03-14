@@ -51,10 +51,30 @@ class OpenAiCandidateAnalysisService
             'requirements' => $jobOffer->jobOfferRequirements->map(fn($r) => "{$r->type}: {$r->category} - {$r->level} ({$r->evidence})")->toArray(),
         ], JSON_UNESCAPED_UNICODE);
 
+        $languages = $candidateData['languages'] ?? [];
+        $languages = collect(is_array($languages) ? $languages : [])
+            ->map(function ($item) {
+                if (is_array($item)) {
+                    return [
+                        'language' => $item['language'] ?? $item['name'] ?? null,
+                        'level' => $item['level'] ?? null,
+                    ];
+                }
+
+                return [
+                    'language' => is_string($item) ? $item : null,
+                    'level' => null,
+                ];
+            })
+            ->filter(fn (array $row) => ! empty($row['language']))
+            ->values()
+            ->all();
+
         $candidateDetails = json_encode([
             'experience' => $candidateData['work_experience'] ?? [],
             'education' => $candidateData['education'] ?? [],
             'skills' => array_merge($candidateData['technical_skills'] ?? [], $candidateData['soft_skills'] ?? []),
+            'languages' => $languages,
         ], JSON_UNESCAPED_UNICODE);
 
         return <<<EOT
@@ -76,6 +96,7 @@ INSTRUCCIONES CRÍTICAS:
 3. Si el candidato fue aprobado, busca "red flags" o debilidades ocultas.
 4. El "qualitative_score" es TU evaluación (0-100). Puede ser muy distinto al score técnico. Un candidato con score técnico bajo podría tener un alto potencial cualitativo (y viceversa).
 5. Sé estricto con los requisitos obligatorios pero flexible con la terminología.
+6. NO INVENTES DATOS: si no existe evidencia explícita en DATOS DEL CANDIDATO (por ejemplo nivel de idioma), indícalo como "no informado" y no lo asumas.
 
 FORMATO DE SALIDA (JSON VÁLIDO ÚNICAMENTE):
 {

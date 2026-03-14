@@ -264,6 +264,12 @@
             <div class="rj">
                 <h2 class="ek ck kk wm xb">{{ __('Iniciar sesión') }}</h2>
                 <p>{{ __('Inicia sesión para continuar') }}</p>
+
+                @if (session('status'))
+                    <div class="mb-4 font-medium text-sm text-green-600 dark:text-green-400 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800 mt-4">
+                        {{ session('status') }}
+                    </div>
+                @endif
             </div>
 
             <div class="sb">

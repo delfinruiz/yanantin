@@ -18,13 +18,19 @@ class SurveyAiAppreciationService
         $typeSummary = $statsService->typeSummary($survey);
 
         $participantsUsers = Response::whereHas('question', fn ($q) => $q->where('survey_id', $survey->id))
+            ->withoutInterview()
             ->whereNotNull('user_id')
+            ->whereNotNull('value')
+            ->where('value', '!=', 'Sin Respuesta')
             ->distinct('user_id')
             ->count('user_id');
 
         $participantsGuests = Response::whereHas('question', fn ($q) => $q->where('survey_id', $survey->id))
+            ->withoutInterview()
             ->whereNull('user_id')
             ->whereNotNull('guest_email')
+            ->whereNotNull('value')
+            ->where('value', '!=', 'Sin Respuesta')
             ->distinct('guest_email')
             ->count('guest_email');
 

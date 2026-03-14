@@ -3,13 +3,9 @@
 namespace App\Filament\Resources\Surveys\SurveyResource\Pages;
 
 use App\Filament\Resources\Surveys\SurveyResource;
-use Filament\Actions\CreateAction;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
-use App\Models\Dimension;
-use Filament\Notifications\Notification;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select as FormSelect;
 use App\Models\Survey;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +31,7 @@ class ListSurveys extends ListRecords
                 ->color('success')
                 ->icon('heroicon-o-document-plus')
                 ->modalHeading('Estructurar Nueva Encuesta')
-                ->modalDescription('Selecciona el nombre de la encuesta para comenzar. Una vez creada, podrás añadir preguntas y se guardarán automáticamente.')
+                ->modalDescription('Selecciona el nombre de la encuesta para comenzar. Solo aparecerán encuestas cuyo peso total (suma de dimensiones) sea 100%. Una vez creada, podrás añadir preguntas y se guardarán automáticamente.')
                 ->schema([
                     FormSelect::make('title')
                         ->label(__('surveys.fields.select_survey'))
@@ -47,6 +43,7 @@ class ListSurveys extends ListRecords
                                 ->whereNotIn('survey_name', $existingTitles)
                                 ->select('survey_name', DB::raw('SUM(weight) as total_weight'))
                                 ->groupBy('survey_name')
+                                ->havingRaw('ROUND(SUM(weight), 2) = 100.00')
                                 ->orderBy('survey_name')
                                 ->get()
                                 ->mapWithKeys(function ($dim) {
@@ -60,7 +57,12 @@ class ListSurveys extends ListRecords
                                 ->toArray();
                         })
                         ->placeholder(__('surveys.fields.no_surveys_in_catalog'))
-                        ->disabled(fn () => \App\Models\Dimension::whereNotNull('survey_name')->count() === 0),
+                        ->disabled(fn () => \App\Models\Dimension::query()
+                            ->whereNotNull('survey_name')
+                            ->select('survey_name')
+                            ->groupBy('survey_name')
+                            ->havingRaw('ROUND(SUM(weight), 2) = 100.00')
+                            ->count() === 0),
                 ])
                 ->action(function (array $data) {
                     $survey = Survey::create([

@@ -115,6 +115,19 @@ class PublicSurveyController extends Controller
         
         foreach ($questions as $q) {
             $val = $validated['q_' . $q->id] ?? null;
+
+            if (is_string($val) && trim($val) === '') {
+                $val = null;
+            }
+
+            if (is_array($val) && empty($val)) {
+                $val = null;
+            }
+
+            if (! $q->required && $val === null) {
+                $val = 'Sin Respuesta';
+            }
+
             if (is_array($val)) {
                 $val = json_encode($val);
             }

@@ -13,6 +13,7 @@ use App\Http\Controllers\FormBuilder\FormController;
  
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\JobOfferPublicController;
 use App\Http\Controllers\PublicDashboardController;
 use App\Http\Controllers\PublicRegisterController;
@@ -33,6 +34,43 @@ Route::get('/trabaja-con-nosotros/oferta/{jobOffer}', [JobOfferPublicController:
 Route::get('/login', function () {
     return redirect()->route('filament.public.auth.login');
 })->name('login');
+
+// Email Verification Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
+        $request->fulfill();
+        
+        // Notificar éxito vía Filament (Toast)
+        try {
+            \Filament\Notifications\Notification::make()
+                ->title(__('Correo verificado correctamente'))
+                ->success()
+                ->send();
+        } catch (\Throwable $e) {
+            // Fallback silencioso
+        }
+
+        // Redirigir directamente al panel manteniendo la sesión iniciada
+        return redirect('/mi-panel');
+    })->middleware('signed')->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (\Illuminate\Http\Request $request) {
+        try {
+            $request->user()->sendEmailVerificationNotification();
+            return back()->with('status', 'verification-link-sent');
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo reenviar correo de verificación.', [
+                'user_id' => $request->user()?->id,
+                'exception' => $e->getMessage(),
+            ]);
+            return back()->with('status', 'verification-link-failed');
+        }
+    })->middleware('throttle:6,1')->name('verification.send');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/registro', [PublicRegisterController::class, 'create'])->name('signup');
@@ -93,6 +131,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('surveys.report.pdf');
     Route::get('/admin/surveys/{survey}/export-responses', [\App\Http\Controllers\SurveyExportController::class, 'exportResponses'])
         ->name('surveys.responses.export');
+    Route::get('/admin/job-interviews/{interview}/export-responses', [\App\Http\Controllers\SurveyExportController::class, 'exportInterviewResponses'])
+        ->name('job_interviews.responses.export');
 });
 
 Route::middleware('throttle:20,1')->group(function () {

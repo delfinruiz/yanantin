@@ -30,6 +30,21 @@ class JoinGlobalChat
                 Log::warning("JoinGlobalChat: El usuario ID {$user->id} no tiene el trait InteractsWithWirechat.");
                 return;
             }
+
+            $shouldJoin = (bool) $user->is_internal;
+            try {
+                if (method_exists($user, 'hasRole') && $user->hasRole('public')) {
+                    $shouldJoin = false;
+                }
+            } catch (\Throwable $e) {
+                $shouldJoin = (bool) $user->is_internal;
+            }
+
+            if (! $shouldJoin) {
+                return;
+            }
+
+            $defaultAvatarPath = 'groups/avatars/01KECPXESFJ5SEA60BCHRZ8B25.jpg';
             
             $group = Group::where('name', 'General')->first();
             $conversation = null;
@@ -41,21 +56,24 @@ class JoinGlobalChat
                 $group = $conversation->group;
                 if ($group) {
                     $group->forceFill(['type' => GroupType::PUBLIC->value])->save();
-                    $group->avatar_url = Storage::url('groups/avatars/01KECPXESFJ5SEA60BCHRZ8B25.jpg');
+                    $group->avatar_url = $defaultAvatarPath;
                     $group->save();
                     if (! $group->cover) {
-                        $path = 'groups/avatars/01KECPXESFJ5SEA60BCHRZ8B25.jpg';
+                        $path = $defaultAvatarPath;
                         $group->cover()->create([
                             'file_path' => $path,
                             'file_name' => basename($path),
                             'original_name' => basename($path),
                             'mime_type' => 'image/jpeg',
-                            'url' => Storage::url($path),
+                            'url' => '/storage/' . $path,
                         ]);
                     }
                 }
                 // Agregar todos los usuarios existentes como participantes (excepto el owner)
-                $allUsers = AppUser::where('id', '!=', $user->id)->get();
+                $allUsers = AppUser::query()
+                    ->where('id', '!=', $user->id)
+                    ->where('is_internal', true)
+                    ->get();
                 foreach ($allUsers as $u) {
                     try {
                         $conversation->addParticipant($u, ParticipantRole::PARTICIPANT);
@@ -65,21 +83,25 @@ class JoinGlobalChat
                 }
             } else {
                 $conversation = $group->conversation;
-                if (empty($group->avatar_url)) {
-                    $group->avatar_url = Storage::url('groups/avatars/01KECPXESFJ5SEA60BCHRZ8B25.jpg');
+                if (
+                    empty($group->avatar_url)
+                    || strpos($group->avatar_url, 'http') !== false
+                    || str_starts_with($group->avatar_url, '/storage/')
+                ) {
+                    $group->avatar_url = $defaultAvatarPath;
                     $group->save();
                 }
                 if ($group->type !== GroupType::PUBLIC) {
                     $group->forceFill(['type' => GroupType::PUBLIC->value])->save();
                 }
                 if (! $group->cover) {
-                    $path = 'groups/avatars/01KECPXESFJ5SEA60BCHRZ8B25.jpg';
+                    $path = $defaultAvatarPath;
                     $group->cover()->create([
                         'file_path' => $path,
                         'file_name' => basename($path),
                         'original_name' => basename($path),
                         'mime_type' => 'image/jpeg',
-                        'url' => Storage::url($path),
+                        'url' => '/storage/' . $path,
                     ]);
                 }
             }

@@ -6,7 +6,6 @@ use App\Models\Response;
 use App\Models\Survey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
 
 class SurveyRespondController extends Controller
 {
@@ -37,18 +36,8 @@ class SurveyRespondController extends Controller
         $state = [];
         foreach ($questions as $q) {
             $existing = Response::where('question_id', $q->id)->where('user_id', $userId)->first();
-            $state['q_'.$q->id] = $existing ? $existing->value : null;
-        }
-
-        $pendingRequired = $survey->questions()->where('required', true)
-            ->whereDoesntHave('responses', fn ($r) => $r->where('user_id', $userId))
-            ->exists();
-        if (! $pendingRequired) {
-            return view('surveys.thanks', [
-                'survey' => $survey,
-                'status' => 'already',
-                'message' => 'Encuesta ya contestada',
-            ]);
+            $value = $existing ? $existing->value : null;
+            $state['q_'.$q->id] = $value === 'Sin Respuesta' ? null : $value;
         }
 
         return view('surveys.respond', [
@@ -77,12 +66,43 @@ class SurveyRespondController extends Controller
         }
 
         $questions = $survey->questions()->orderBy('order')->get();
+        $rules = [];
+        $messages = [];
+
+        foreach ($questions as $q) {
+            if (! $q->required) {
+                continue;
+            }
+
+            $key = 'q_'.$q->id;
+            if ($q->type === 'multi') {
+                $rules[$key] = ['required', 'array', 'min:1'];
+                $messages["{$key}.required"] = 'Esta pregunta es obligatoria.';
+                $messages["{$key}.min"] = 'Esta pregunta es obligatoria.';
+            } else {
+                $rules[$key] = ['required'];
+                $messages["{$key}.required"] = 'Esta pregunta es obligatoria.';
+            }
+        }
+
+        $request->validate($rules, $messages);
+
         foreach ($questions as $q) {
             $key = 'q_'.$q->id;
             $val = $request->input($key);
-            if ($q->required && ($val === null || $val === '')) {
-                return back()->with('error', 'Por favor responda todas las preguntas requeridas.');
+
+            if (is_string($val) && trim($val) === '') {
+                $val = null;
             }
+
+            if (is_array($val) && empty($val)) {
+                $val = null;
+            }
+
+            if (! $q->required && $val === null) {
+                $val = 'Sin Respuesta';
+            }
+
             if ($val !== null) {
                 Response::updateOrCreate(
                     ['question_id' => $q->id, 'user_id' => $userId],

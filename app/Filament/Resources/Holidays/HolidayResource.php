@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Gate;
 
 class HolidayResource extends Resource
 {
@@ -53,6 +54,11 @@ class HolidayResource extends Resource
         return HolidaysTable::configure($table);
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Gate::allows('viewAny', Holiday::class);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -64,8 +70,8 @@ class HolidayResource extends Resource
     {
         return [
             'index' => ListHolidays::route('/'),
-        //    'create' => CreateHoliday::route('/create'),
-        //    'edit' => EditHoliday::route('/{record}/edit'),
+            'create' => CreateHoliday::route('/create'),
+            'edit' => EditHoliday::route('/{record}/edit'),
         ];
     }
 }
